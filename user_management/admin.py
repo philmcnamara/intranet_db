@@ -106,8 +106,8 @@ class LabUserAdmin(BaseUserAdmin):
 
     def get_formsets_with_inlines(self, request, obj=None):
         """Show is_principal_investigator inline only for superusers"""
-
-        if request.user.is_superuser and obj:
+        
+        if request.user.is_superuser:
             for inline in self.get_inline_instances(request, obj):
                 yield inline.get_formset(request, obj), inline
 
