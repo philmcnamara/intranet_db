@@ -388,18 +388,33 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
 #               SC. POMBE STRAIN                #
 #################################################
 
+POMBE_MATING_TYPE_CHOICES = (
+    ('h-','h-'),
+    ('h+','h+'),
+    ('h+/h-','h+/h-'),
+    ('h?','h?'),
+    ('h90','h90')
+)
+
 class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     
     box_number = models.SmallIntegerField("box number", blank=False)
+    strain_name = models.CharField("strain name", max_length=32, blank=False)
+    former_name = models.CharField("former name", max_length=32, blank=True)
     parent_1 = models.ForeignKey('self', verbose_name='Parent 1', on_delete=models.PROTECT, related_name='pombe_parent_1', help_text='Main parental strain', blank=True, null=True)
     parent_2 = models.ForeignKey('self', verbose_name='Parent 2', on_delete=models.PROTECT, related_name='pombe_parent_2', help_text='Only for crosses', blank=True, null=True)
-    parental_strain = models.CharField("parental strains", max_length=255, blank=True)
-    mating_type = models.CharField("mating type", max_length=20, blank=True)
+    mating_type = models.CharField("mating type", choices=POMBE_MATING_TYPE_CHOICES, max_length=20, blank=True)
     auxotrophic_marker = models.CharField("auxotrophic markers", max_length=255, blank=True)
-    name = models.TextField("genotype", blank=False)
+    genotype = models.TextField("genotype", blank=True)
     phenotype = models.CharField("phenotype", max_length=255, blank=True)
     received_from = models.CharField("received from", max_length=255, blank=True)
     comment = models.CharField("comments", max_length=300, blank=True)
+    frozen_on = models.DateTimeField("frozen on")
+    frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    made_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
+                                                                 ("triploid", "triploid"), ("tetraploid", "tetraploid")),
+                                                                 blank = True)
 
     integrated_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_integrated_plasmids', blank=True)
     cassette_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_cassette_plasmids', help_text='Tagging and knock out plasmids', blank=True)
@@ -438,7 +453,10 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
         verbose_name_plural = 'strains - Sc. pombe'
     
     def __str__(self):
-        return "{} - {}".format(self.id, self.get_genotype())
+        return "{} - {}".format(self.id, self.get_name())
+
+    def get_name(self):
+        return self.strain_name
 
     def get_all_instock_plasmids(self):
         """Returns all plasmids present in the stocked organism"""
@@ -465,7 +483,7 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
         all_plasmids = self.get_all_instock_plasmids()
         for pl in all_plasmids:
             elements = elements | pl.formz_elements.all()
-        elements = elements.distinct().filter(common_feature=False).order_by('name')
+        elements = elements.distinct().filter(common_feature=False).order_by('genotype')
         return elements
     
     def get_all_common_formz_elements(self):
@@ -475,14 +493,14 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
         all_plasmids = self.get_all_instock_plasmids()
         for pl in all_plasmids:
             elements = elements | pl.formz_elements.all()
-        elements = elements.distinct().filter(common_feature=True).order_by('name')
+        elements = elements.distinct().filter(common_feature=True).order_by('genotype')
         return elements
     
     def get_genotype(self):
 
         """Returns the full genotype of a pombe strain"""
 
-        return ' '.join([e for e in [self.auxotrophic_marker, self.name] if e])
+        return ' '.join([e for e in [self.auxotrophic_marker, self.genotype] if e])
 
 class ScPombeStrainEpisomalPlasmid (models.Model):
     
