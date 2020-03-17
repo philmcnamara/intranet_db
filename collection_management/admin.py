@@ -2422,9 +2422,9 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         if '_saveasnew' in request.POST:
             self.fieldsets = (
             (None, {
-                'fields': ('strain_name', 'box_number', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 'genotype',
-                           'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
-                           'frozen_on', 'frozen_by', 'made_by', 'ploidy')
+                'fields': ('box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 
+                       'genotype','integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
+                       'frozen_on', 'frozen_by', 'made_by', 'ploidy')
             }),
             ('FormZ', {
                 'fields': ('formz_projects', 'formz_risk_group', 'formz_gentech_methods', 'formz_elements', 'destroyed_date')
@@ -2433,9 +2433,9 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         else:
             self.fieldsets = (
             (None, {
-                'fields': ('strain_name', 'box_number', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 'genotype',
-                           'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
-                           'frozen_on', 'frozen_by', 'made_by', 'ploidy')
+                'fields': ('box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 
+                       'genotype','integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
+                       'frozen_on', 'frozen_by', 'made_by', 'ploidy')
             }),
             ('FormZ', {
                 'classes': ('collapse',),
