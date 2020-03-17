@@ -398,7 +398,7 @@ POMBE_MATING_TYPE_CHOICES = (
 
 class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     
-    box_number = models.SmallIntegerField("box number", blank=False)
+    box_number = models.CharField("box number", blank=True, max_length=20)
     strain_name = models.CharField("strain name", max_length=32, blank=False)
     former_name = models.CharField("former name", max_length=32, blank=True)
     parent_1 = models.ForeignKey('self', verbose_name='Parent 1', on_delete=models.PROTECT, related_name='pombe_parent_1', help_text='Main parental strain', blank=True, null=True)
@@ -409,9 +409,9 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     phenotype = models.CharField("phenotype", max_length=255, blank=True)
     received_from = models.CharField("received from", max_length=255, blank=True)
     comment = models.CharField("comments", max_length=300, blank=True)
-    frozen_on = models.DateTimeField("frozen on", default=None)
-    frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="frozen_by", null=True)
-    made_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="made_by", null=True)
+    frozen_on = models.DateTimeField("frozen on", default=None, blank=True)
+    frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="frozen_by", null=True, blank=True)
+    made_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="made_by", null=True, blank=True)
     ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
                                                                  ("triploid", "triploid"), ("tetraploid", "tetraploid")),
                                                                  blank = True)
