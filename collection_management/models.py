@@ -410,8 +410,8 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     received_from = models.CharField("received from", max_length=255, blank=True)
     comment = models.CharField("comments", max_length=300, blank=True)
     frozen_on = models.DateTimeField("frozen on")
-    frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
-    made_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="frozen_by", null=True)
+    made_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="made_by", null=True)
     ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
                                                                  ("triploid", "triploid"), ("tetraploid", "tetraploid")),
                                                                  blank = True)
