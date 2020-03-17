@@ -2111,9 +2111,11 @@ class ScPombeStrainQLSchema(DjangoQLSchema):
         '''Define fields that can be searched'''
         
         if model == ScPombeStrain:
-            return ['id', 'box_number', FieldParent1(), FieldParent2(), 'parental_strain', 'mating_type', 
-            'auxotrophic_marker', 'name', FieldIntegratedPlasmidM2M(), FieldCassettePlasmidM2M(), FieldEpisomalPlasmidM2M(),
-            'phenotype', 'received_from', 'comment', 'created_by', FieldFormZProject(), FieldEpisomalPlasmidFormZProjectScPom()]
+            return ['id', 'box_number', 'strain_name', 'former_name', FieldParent1(), FieldParent2(), 'mating_type', 
+            'auxotrophic_marker', 'genotype', FieldIntegratedPlasmidM2M(), FieldCassettePlasmidM2M(), FieldEpisomalPlasmidM2M(),
+            'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by', 'made_by', 'ploidy',
+            'created_by', FieldFormZProject(), FieldEpisomalPlasmidFormZProjectScPom()]
+
         elif model == User:
             return [SearchFieldOptUsernameScPom(), SearchFieldOptLastnameScPom()]
         return super(ScPombeStrainQLSchema, self).get_fields(model)
@@ -2121,7 +2123,6 @@ class ScPombeStrainQLSchema(DjangoQLSchema):
 class ScPombeStrainExportResource(resources.ModelResource):
     """Defines a custom export resource class for ScPombeStrain"""
 
-    additional_parental_strain_info = Field(attribute='parental_strain', column_name='additional_parental_strain_info')
     episomal_plasmids_in_stock = Field()
 
     def dehydrate_episomal_plasmids_in_stock(self, strain):
@@ -2129,12 +2130,14 @@ class ScPombeStrainExportResource(resources.ModelResource):
 
     class Meta:
         model = ScPombeStrain
-        fields = ('id', 'box_number', 'parent_1', 'parent_2', 'additional_parental_strain_info', 'mating_type',
-        'auxotrophic_marker', 'name', 'phenotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
-        'received_from', 'comment', 'created_date_time', 'created_by__username')
-        export_order = ('id', 'box_number', 'parent_1', 'parent_2', 'additional_parental_strain_info', 'mating_type',
-        'auxotrophic_marker', 'name', 'phenotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
-        'received_from', 'comment', 'created_date_time', 'created_by__username')
+        fields = ('id', 'box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type',
+        'auxotrophic_marker', 'genotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
+        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by', 'made_by', 'ploidy',
+        'created_date_time', 'created_by__username')
+        export_order = ('id', 'box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type',
+        'auxotrophic_marker', 'genotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
+        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by', 'made_by', 'ploidy',
+        'created_date_time', 'created_by__username')
 
 def export_scpombestrain(modeladmin, request, queryset):
     """Export ScPombeStrain"""
@@ -2165,13 +2168,13 @@ class ScPombeStrainForm(forms.ModelForm):
         """Check if name is unique before saving"""
         
         if not self.instance.pk:
-            qs = ScPombeStrain.objects.filter(name=self.cleaned_data["name"])
+            qs = ScPombeStrain.objects.filter(strain_name=self.cleaned_data["strain_name"])
             if qs:
                 raise forms.ValidationError('Strain with this name already exists.')
             else:
-                return self.cleaned_data["name"]
+                return self.cleaned_data["strain_name"]
         else:
-            return self.cleaned_data["name"]
+            return self.cleaned_data["strain_name"]
 
 class ScPombeStrainEpisomalPlasmidInline(admin.TabularInline):
     
@@ -2212,14 +2215,14 @@ class ScPombeStrainEpisomalPlasmidInline(admin.TabularInline):
         return super(ScPombeStrainEpisomalPlasmidInline, self).get_queryset(request)
 
 class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'name', 'auxotrophic_marker', 'mating_type', 'approval',)
+    list_display = ('id', 'strain_name', 'auxotrophic_marker', 'mating_type', 'approval',)
     list_display_links = ('id', )
     list_per_page = 25
     formfield_overrides = {CharField: {'widget': TextInput(attrs={'size':'93'})},}
     djangoql_schema = ScPombeStrainQLSchema
     actions = [export_scpombestrain, formz_as_html]
     form = ScPombeStrainForm
-    search_fields = ['id', 'name']
+    search_fields = ['id', 'strain_name']
     autocomplete_fields = ['parent_1', 'parent_2', 'integrated_plasmids', 'cassette_plasmids', 
                            'formz_projects', 'formz_gentech_methods', 'formz_elements']
     inlines = [ScPombeStrainEpisomalPlasmidInline]
@@ -2305,10 +2308,11 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
             if self.can_change:
                 return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by',]
             else:
-                return ['box_number', 'parent_1', 'parent_2', 'parental_strain', 'mating_type', 'auxotrophic_marker', 'name',
-                        'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 'created_date_time', 
-                        'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi', 'created_by',
-                        'formz_projects', 'formz_risk_group', 'formz_gentech_methods', 'formz_elements', 'destroyed_date']
+                return ['id', 'box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type',
+                        'auxotrophic_marker', 'genotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
+                        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by', 'made_by', 'ploidy',
+                        'created_date_time', 'created_by__username']
+
         else:
             return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by',]
 
@@ -2336,7 +2340,7 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
 
         obj.history_formz_projects = str(tuple(obj.formz_projects.all().order_by('short_title_english').values_list('short_title_english', flat=True))).replace(',)', ')') if obj.formz_projects.all() else ""
         obj.history_formz_gentech_methods = str(tuple(obj.formz_gentech_methods.all().order_by('english_name').values_list('english_name', flat=True))).replace(',)', ')') if obj.formz_gentech_methods.all() else ""
-        obj.history_formz_elements = str(tuple(obj.formz_elements.all().order_by('name').values_list('name', flat=True))).replace(',)', ')') if obj.formz_elements.all() else ""
+        obj.history_formz_elements = str(tuple(obj.formz_elements.all().order_by('strain_name').values_list('strain_name', flat=True))).replace(',)', ')') if obj.formz_elements.all() else ""
 
         obj.save_without_historical_record()
 
@@ -2360,8 +2364,9 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
 
         self.fieldsets = (
         (None, {
-            'fields': ('box_number', 'parent_1', 'parent_2', 'parental_strain', 'mating_type', 'auxotrophic_marker', 'name',
-        'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment',)
+            'fields': ('strain_name', 'box_number', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 'genotype',
+                        'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
+                        'frozen_on', 'frozen_by', 'made_by', 'ploidy')
         }),
         ('FormZ', {
             'fields': ('formz_projects', 'formz_risk_group', 'formz_gentech_methods', 'formz_elements', 'destroyed_date')
@@ -2417,9 +2422,9 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         if '_saveasnew' in request.POST:
             self.fieldsets = (
             (None, {
-                'fields': ('box_number', 'parent_1', 'parent_2', 'parental_strain', 'mating_type', 'auxotrophic_marker', 'name',
-                'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 'created_date_time', 
-                'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by',)
+                'fields': ('strain_name', 'box_number', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 'genotype',
+                           'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
+                           'frozen_on', 'frozen_by', 'made_by', 'ploidy')
             }),
             ('FormZ', {
                 'fields': ('formz_projects', 'formz_risk_group', 'formz_gentech_methods', 'formz_elements', 'destroyed_date')
@@ -2428,9 +2433,9 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         else:
             self.fieldsets = (
             (None, {
-                'fields': ('box_number', 'parent_1', 'parent_2', 'parental_strain', 'mating_type', 'auxotrophic_marker', 'name',
-                'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 'created_date_time', 
-                'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by',)
+                'fields': ('strain_name', 'box_number', 'parent_1', 'parent_2', 'mating_type', 'auxotrophic_marker', 'genotype',
+                           'integrated_plasmids', 'cassette_plasmids', 'phenotype', 'received_from', 'comment', 
+                           'frozen_on', 'frozen_by', 'made_by', 'ploidy')
             }),
             ('FormZ', {
                 'classes': ('collapse',),
@@ -2445,13 +2450,13 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         preserved_filters = self.get_preserved_filters(request)
 
         msg_dict = {
-            'name': opts.verbose_name,
+            'strain_name': opts.verbose_name,
             'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
         }
 
         if "_disapprove_record" in request.POST:
             msg = format_html(
-                _('The {name} "{obj}" was disapproved.'),
+                _('The {strain_name} "{obj}" was disapproved.'),
                 **msg_dict)
             self.message_user(request, msg, messages.SUCCESS)
             return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
