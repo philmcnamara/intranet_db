@@ -2215,7 +2215,7 @@ class ScPombeStrainEpisomalPlasmidInline(admin.TabularInline):
         return super(ScPombeStrainEpisomalPlasmidInline, self).get_queryset(request)
 
 class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'strain_name', 'auxotrophic_marker', 'mating_type', 'approval',)
+    list_display = ('id', 'strain_name', 'box_number', 'genotype', 'auxotrophic_marker', 'mating_type', 'approval',)
     list_display_links = ('id', )
     list_per_page = 25
     formfield_overrides = {CharField: {'widget': TextInput(attrs={'size':'93'})},}
