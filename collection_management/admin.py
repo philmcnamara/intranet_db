@@ -1875,7 +1875,9 @@ class OligoQLSchema(DjangoQLSchema):
         '''Define fields that can be searched'''
         
         if model == Oligo:
-            return ['id', 'name','sequence', FieldUse(), 'gene', 'restriction_site', 'description', 'comment', 'created_by',]
+            return ['id', 'name','sequence', 'scale', 'purification', FieldUse(), 
+            'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location', 
+            'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOligo(), SearchFieldOptLastnameOligo()]
         return super(OligoQLSchema, self).get_fields(model)
@@ -1885,7 +1887,8 @@ class OligoExportResource(resources.ModelResource):
     
     class Meta:
         model = Oligo
-        fields = ('id', 'name','sequence', 'us_e', 'gene', 'restriction_site', 'description', 'comment',
+        fields = ('id', 'name','sequence', 'scale', 'purification', 'us_e', 
+        'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location',
         'created_date_time', 'created_by__username',)
 
 def export_oligo(modeladmin, request, queryset):
@@ -1912,7 +1915,7 @@ def export_oligo(modeladmin, request, queryset):
 export_oligo.short_description = "Export selected oligos"
 
 class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'name','get_oligo_short_sequence', 'restriction_site','created_by', 'approval')
+    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'description', 'ordered_by', 'approval')
     list_display_links = ('id',)
     list_per_page = 25
     formfield_overrides = {
@@ -2010,7 +2013,8 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             if self.can_change:
                 return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by'] 
             else:
-                return ['name','sequence', 'us_e', 'gene', 'restriction_site', 'description', 'comment', 'created_date_time',
+                return ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
+                'synonym', 'ordered_by', 'order_date', 'location', 'created_date_time',
                 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi', 'created_by',]
         else:
             return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi',]
@@ -2018,7 +2022,8 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def add_view(self,request,extra_context=None):
         '''Override default add_view to show only desired fields'''
         
-        self.fields = ('name','sequence', 'us_e', 'gene', 'restriction_site', 'description', 'comment', )
+        self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
+                'synonym', 'ordered_by', 'order_date', 'location',)
         return super(OligoPage,self).add_view(request)
 
     def change_view(self,request,object_id,extra_context=None):
@@ -2051,10 +2056,15 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
 
         if '_saveasnew' in request.POST:
-            self.fields = ('name','sequence', 'us_e', 'gene', 'restriction_site', 'description', 'comment' )
+            self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 
+                           'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location',)
+
+            
         else:
-            self.fields = ('name','sequence', 'us_e', 'gene', 'restriction_site', 'description', 'comment',
-                'created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi', 'created_by',)
+            self.fields = ('name','sequence', 'scale', 'purification',
+                           'us_e', 'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location',
+                           'created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 
+                           'last_changed_approval_by_pi', 'created_by',)
 
         return super(OligoPage,self).change_view(request,object_id, extra_context=extra_context)
 

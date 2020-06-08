@@ -355,12 +355,17 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     
     name = models.CharField("name", max_length=255, unique=True, blank=False)
     sequence = models.CharField("sequence", max_length=255, unique=True, blank=False)
-    length = models.SmallIntegerField("length", null=True)
+    scale = models.SmallIntegerField("scale (nanomolar)", null=True, blank=True)
+    purification = models.CharField("purification", max_length=20, choices=(("Desalting", "Desalting"), ("HPLC", "HPLC"),
+                                                                             ("PAGE", "PAGE"), ("RNase", "RNase")), blank = True)
     us_e = models.CharField("use", max_length=255, blank=True)
     gene = models.CharField("gene", max_length=255, blank=True)
-    restriction_site = models.CharField("restriction sites", max_length=255, blank=True)
     description = models.TextField("description", blank=True)
-    comment = models.CharField("comments", max_length=255, blank=True)
+    synonym = models.CharField("synonym", max_length=255, blank=True)
+    ordered_by = models.CharField("ordered_by", null=True, blank=True, max_length=255)
+    #ordered_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.PROTECT)
+    order_date = models.DateField("ordered_date", null=True, blank=True)
+    location = models.CharField("location", max_length=255, blank=True)
     
     created_date_time = models.DateTimeField("created", auto_now_add=True)
     created_approval_by_pi = models.BooleanField("record creation approval", default=False)
