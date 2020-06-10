@@ -354,7 +354,7 @@ class Plasmid (models.Model, SaveWithoutHistoricalRecord):
 class Oligo (models.Model, SaveWithoutHistoricalRecord):
     
     name = models.CharField("name", max_length=255, unique=True, blank=False)
-    sequence = models.CharField("sequence", max_length=255, unique=True, blank=False)
+    sequence = models.CharField("sequence", max_length=255, blank=False)
     scale = models.SmallIntegerField("scale (nanomolar)", null=True, blank=True)
     purification = models.CharField("purification", max_length=20, choices=(("Desalting", "Desalting"), ("HPLC", "HPLC"),
                                                                              ("PAGE", "PAGE"), ("RNase", "RNase")), blank = True)

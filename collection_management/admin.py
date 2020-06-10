@@ -1915,7 +1915,7 @@ def export_oligo(modeladmin, request, queryset):
 export_oligo.short_description = "Export selected oligos"
 
 class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'description', 'ordered_by', 'approval')
+    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', 'description', 'ordered_by', 'order_date', 'approval')
     list_display_links = ('id',)
     list_per_page = 25
     formfield_overrides = {
