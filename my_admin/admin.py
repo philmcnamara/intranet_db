@@ -111,7 +111,8 @@ class MyAdminSite(admin.AdminSite):
             url(r'^order_management/my_orders_redirect$', self.admin_view(self.my_orders_redirect)),
             url(r'uploads/(?P<url_path>.*)$', self.admin_view(self.uploads)),
             url(r'^150freezer/$', self.freezer150),
-            path('<path:object_id>/formz/', self.admin_view(self.formz))
+            path('<path:object_id>/formz/', self.admin_view(self.formz)),
+            url(r'^order_management/order_autocomplete/(?P<field>.*)=(?P<query>.*),(?P<timestamp>.*)$', self.admin_view(self.autocomplete_order)),
         ] + urls
         return urls
 
@@ -157,7 +158,7 @@ class MyAdminSite(admin.AdminSite):
                     if model_name == 'celllinedoc':
                         obj_id = int(file_name.split('_')[-1])
                     else:
-                        obj_id = int(re.findall('\d+(?=_)', file_name)[0])
+                        obj_id = int(re.findall('\d+(?=_)', file_name + '_')[0])
                     obj = apps.get_model(app_name, model_name).objects.get(id=obj_id)  
 
                     if model_name == 'celllinedoc':
@@ -172,13 +173,16 @@ class MyAdminSite(admin.AdminSite):
             except:
                 download_file_name = os.path.basename(url_path)
 
+            # Needed for file names that include special, non ascii, characters 
+            file_expr = "filename*=utf-8''{}".format(urllib.parse.quote(download_file_name))
+
             # Set content disposition based on file type
             if 'pdf' in mimetype.lower():
-                response["Content-Disposition"] = 'inline; filename="{}"'.format(download_file_name)
+                response["Content-Disposition"] = 'inline; {}'.format(file_expr)
             elif 'png' in mimetype.lower():
-                response["Content-Disposition"] = ""
+                response["Content-Disposition"] = "{}".format(file_expr)
             else:
-                response["Content-Disposition"] = 'attachment; filename="{}"'.format(download_file_name)
+                response["Content-Disposition"] = 'attachment; {}'.format(file_expr)
             
             response['X-Accel-Redirect'] = "/secret/{url_path}".format(url_path=url_path)
             return response
@@ -291,6 +295,79 @@ class MyAdminSite(admin.AdminSite):
         'virus_packaging_cell_line': virus_packaging_cell_line,}
 
         return render(request, 'admin/formz.html', context)
+
+    def autocomplete_order(self, request, *args, **kwargs):
+        from django.http import HttpResponse
+        from order_management.models import Order
+
+        field = kwargs['field']
+        query = kwargs['query']
+
+        orders = Order.objects.filter(**{'{}__icontains'.format(field): query}) \
+                                .exclude(supplier_part_no__icontains="?") \
+                                .exclude(supplier_part_no="") \
+                                .exclude(part_description__iexact="none") \
+                                .order_by('-id')[:50] \
+                                .values("supplier", "supplier_part_no", "part_description", "location", "msds_form", "price", "cas_number", "ghs_pictogram", "hazard_level_pregnancy")
+
+        lstofprodname = []
+        json_line = ""
+
+        if field == "part_description":
+        
+            # Loop through all elements (= rows) in the order list
+            for order in orders:
+                
+                # Create value:data pairs using part_description or supplier_part_no as values
+                part_description_lower = order["part_description"].lower()
+                supplier_part_no = order["supplier_part_no"].strip().replace('#'," ")
+                
+                if part_description_lower not in lstofprodname:
+
+                    if len(lstofprodname) > 10: break
+                        
+                    json_line = json_line + '{{"value":"{}","data":"{}#{}#{}#{}#{}#{}#{}#{}"}},'.format(
+                        order["part_description"], 
+                        supplier_part_no, 
+                        order["supplier"], 
+                        order["location"],
+                        order["msds_form"] if order["msds_form"] else 0,
+                        order["price"],
+                        order["cas_number"], 
+                        order["ghs_pictogram"],
+                        order["hazard_level_pregnancy"])
+                    
+                    lstofprodname.append(part_description_lower)
+
+        elif field == "supplier_part_no":
+                        
+            # Loop through all elements (= rows) in the order list
+            for order in orders:
+                
+                # Create value:data pairs using part_description or supplier_part_no as values
+                part_description_lower = order["part_description"].lower()
+                supplier_part_no = order["supplier_part_no"].strip().replace('#'," ")
+                
+                if part_description_lower not in lstofprodname:
+
+                    if len(lstofprodname) > 10: break
+                        
+                    json_line = json_line + '{{"value":"{}","data":"{}#{}#{}#{}#{}#{}#{}#{}"}},'.format(
+                        supplier_part_no, 
+                        order["part_description"], 
+                        order["supplier"], 
+                        order["location"],
+                        order["msds_form"] if order["msds_form"] else 0,
+                        order["price"],
+                        order["cas_number"], 
+                        order["ghs_pictogram"],
+                        order["hazard_level_pregnancy"])
+                    
+                    lstofprodname.append(part_description_lower)
+
+        json_out = """[{}]""".format(json_line[:-1])
+
+        return HttpResponse(json_out, content_type='application/json')
 
 # Instantiate custom admin site 
 my_admin_site = MyAdminSite()
