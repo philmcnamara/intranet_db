@@ -132,11 +132,8 @@ class LabUserAdmin(BaseUserAdmin):
     def user_pretty_name(self):
         ''' Create a pretty name for a user to be shown as its unicode attribute'''
         
-        if self.first_name:
-            pretty_name = self.first_name[0].upper() + '. ' + self.last_name.title()
-            return pretty_name
-        else:
-            return self.username
+        return self.username
+        
     User.__str__ = user_pretty_name
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):

@@ -1901,7 +1901,7 @@ class OligoQLSchema(DjangoQLSchema):
         
         if model == Oligo:
             return ['id', 'name','sequence', 'scale', 'purification', FieldUse(), 
-            'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location', 
+            'gene', 'description', 'synonym', 'ordered_by_user', 'order_date', 'location', 
             'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOligo(), SearchFieldOptLastnameOligo()]
@@ -1913,7 +1913,7 @@ class OligoExportResource(resources.ModelResource):
     class Meta:
         model = Oligo
         fields = ('id', 'name','sequence', 'scale', 'purification', 'us_e', 
-        'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location',
+        'gene', 'description', 'synonym', 'ordered_by_user', 'order_date', 'location',
         'created_date_time', 'created_by__username',)
 
 def export_oligo(modeladmin, request, queryset):
@@ -1940,7 +1940,7 @@ def export_oligo(modeladmin, request, queryset):
 export_oligo.short_description = "Export selected oligos"
 
 class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', 'description', 'ordered_by', 'order_date', 'approval')
+    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', 'description', 'ordered_by_user', 'order_date', 'approval')
     list_display_links = ('id',)
     list_per_page = 25
     formfield_overrides = {
@@ -2039,7 +2039,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by'] 
             else:
                 return ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
-                'synonym', 'ordered_by', 'order_date', 'location', 'created_date_time',
+                'synonym', 'ordered_by_user', 'order_date', 'location', 'created_date_time',
                 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi', 'created_by',]
         else:
             return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi',]
@@ -2048,7 +2048,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         '''Override default add_view to show only desired fields'''
         
         self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
-                'synonym', 'ordered_by', 'order_date', 'location',)
+                'synonym', 'ordered_by_user', 'order_date', 'location',)
         return super(OligoPage,self).add_view(request)
 
     def change_view(self,request,object_id,extra_context=None):
@@ -2084,7 +2084,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
         if '_saveasnew' in request.POST:
             self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 
-                           'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location',)
+                           'gene', 'description', 'synonym', 'ordered_by_user', 'order_date', 'location',)
             extra_context.update({'show_save_and_continue': False,
                         'show_save': False,
                         'show_save_and_add_another': False,
@@ -2094,7 +2094,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                         })
         else:
             self.fields = ('name','sequence', 'scale', 'purification',
-                           'us_e', 'gene', 'description', 'synonym', 'ordered_by', 'order_date', 'location',
+                           'us_e', 'gene', 'description', 'synonym', 'ordered_by_user', 'order_date', 'location',
                            'created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 
                            'last_changed_approval_by_pi', 'created_by',)
 

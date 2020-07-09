@@ -362,8 +362,8 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     gene = models.CharField("gene", max_length=255, blank=True)
     description = models.TextField("description", blank=True)
     synonym = models.CharField("synonym", max_length=255, blank=True)
-    ordered_by = models.CharField("ordered_by", null=True, blank=True, max_length=255)
-    #ordered_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.PROTECT)
+    #ordered_by = models.CharField("ordered_by", null=True, blank=True, max_length=255)
+    ordered_by_user = models.ForeignKey(User, blank=True, null=True, on_delete=models.PROTECT)
     order_date = models.DateField("ordered_date", null=True, blank=True)
     location = models.CharField("location", max_length=255, blank=True)
     
@@ -414,9 +414,9 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     phenotype = models.CharField("phenotype", max_length=255, blank=True)
     received_from = models.CharField("received from", max_length=255, blank=True)
     comment = models.CharField("comments", max_length=300, blank=True)
-    frozen_on = models.DateTimeField("frozen on", default=None, blank=True)
+    frozen_on = models.DateField("frozen on", default=None, blank=True)
     frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="frozen_by", null=True, blank=True)
-    made_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="made_by", null=True, blank=True)
+    made_by = models.TextField("made by", blank=True, default="")
     ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
                                                                  ("triploid", "triploid"), ("tetraploid", "tetraploid")),
                                                                  blank = True)
