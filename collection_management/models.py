@@ -413,8 +413,8 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     genotype = models.TextField("genotype", blank=True)
     phenotype = models.CharField("phenotype", max_length=255, blank=True)
     received_from = models.CharField("received from", max_length=255, blank=True)
-    comment = models.CharField("comments", max_length=300, blank=True)
-    frozen_on = models.DateField("frozen on", default=None, blank=True)
+    comment = models.CharField("comments", max_length=1000, blank=True)
+    frozen_on = models.DateField("frozen on", default=None, blank=True, null=True)
     frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="frozen_by", null=True, blank=True)
     made_by = models.TextField("made by", blank=True, default="")
     ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
@@ -432,7 +432,7 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     approval_by_pi_date_time = models.DateTimeField(null=True, default=None)
     approval = GenericRelation(RecordToBeApproved)
     approval_user = models.ForeignKey(User, related_name='pombe_approval_user', on_delete=models.PROTECT, null=True)
-    created_by = models.ForeignKey(User, related_name='pombe_createdby_user', on_delete=models.PROTECT)
+    created_by = models.ForeignKey(User, related_name='pombe_createdby_user', on_delete=models.PROTECT, null=True)
     history = HistoricalRecords()
 
     formz_projects = models.ManyToManyField(FormZProject, verbose_name='formZ projects', related_name='pombe_formz_project', blank=False)
