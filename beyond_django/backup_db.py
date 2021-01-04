@@ -86,7 +86,7 @@ pathlib.Path(join(BACKUP_DIR, 'wiki_articles')).mkdir(parents=True, exist_ok=Tru
 pathlib.Path(join(BACKUP_DIR, 'uploads')).mkdir(parents=True, exist_ok=True)
 
 # Remove all and .gz files older than 7 days from backup folder 
-check_output("/usr/bin/find {BACKUP_DIR}/db_dumps/ -maxdepth 1 -type f -mtime +7 -iname '*.gz' -delete".format(BACKUP_DIR=BACKUP_DIR), shell=True)
+#check_output("/usr/bin/find {BACKUP_DIR}/db_dumps/ -maxdepth 1 -type f -mtime +7 -iname '*.gz' -delete".format(BACKUP_DIR=BACKUP_DIR), shell=True)
 
 # Create datadump for django database and gzip it
 CURRENT_DATE_TIME = datetime.now().strftime("%Y%m%d_%H%M")

@@ -94,6 +94,7 @@ class SaCerevisiaeStrain (models.Model, SaveWithoutHistoricalRecord):
     approval = GenericRelation(RecordToBeApproved)
     approval_user = models.ForeignKey(User, related_name='cerevisiae_approval_user', on_delete=models.PROTECT, null=True)
     created_by = models.ForeignKey(User, related_name='cerevisiae_createdby_user', on_delete=models.PROTECT)
+    
     history = HistoricalRecords()
 
     formz_projects = models.ManyToManyField(FormZProject, verbose_name='projects', related_name='cerevisiae_formz_project', blank=False)
@@ -353,7 +354,7 @@ class Plasmid (models.Model, SaveWithoutHistoricalRecord):
 
 class Oligo (models.Model, SaveWithoutHistoricalRecord):
     
-    name = models.CharField("name", max_length=255, unique=True, blank=False)
+    name = models.CharField("name", max_length=255, unique=False, blank=False)
     sequence = models.CharField("sequence", max_length=255, blank=False)
     scale = models.SmallIntegerField("scale (nanomolar)", null=True, blank=True)
     purification = models.CharField("purification", max_length=20, choices=(("Desalting", "Desalting"), ("HPLC", "HPLC"),
@@ -362,9 +363,13 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     gene = models.CharField("gene", max_length=255, blank=True)
     description = models.TextField("description", blank=True)
     synonym = models.CharField("synonym", max_length=255, blank=True)
-    #ordered_by = models.CharField("ordered_by", null=True, blank=True, max_length=255)
-    ordered_by_user = models.ForeignKey(User, blank=True, null=True, on_delete=models.PROTECT)
+    requested_by_user = models.ForeignKey(User, blank=True, null=True, on_delete=models.PROTECT)
+    requested_date = models.DateField("requested_date", null=True, blank=True)
+    ordered = models.BooleanField("ordered?", default=False)
     order_date = models.DateField("ordered_date", null=True, blank=True)
+    #ordered_by_user = models.ForeignKey(User, blank=True, null=True, on_delete=models.PROTECT, related_name="oligo_ordered_by_user")
+    order_conf_num = models.CharField("order confirmation number", max_length=64, blank=True)
+    arrival_date = models.DateField("arrival_date", null=True, blank=True)
     location = models.CharField("location", max_length=255, blank=True)
     
     created_date_time = models.DateTimeField("created", auto_now_add=True)
@@ -398,14 +403,16 @@ POMBE_MATING_TYPE_CHOICES = (
     ('h+','h+'),
     ('h+/h-','h+/h-'),
     ('h?','h?'),
-    ('h90','h90')
+    ('h90','h90'),
+    ('h+/h+', 'h+/h+')
 )
 
 class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     
-    box_number = models.CharField("box number", blank=True, max_length=20)
-    strain_name = models.CharField("strain name", max_length=32, blank=False)
-    former_name = models.CharField("former name", max_length=32, blank=True)
+    box_number = models.CharField("box number", blank=True, max_length=50)
+    strain_name = models.CharField("strain name", max_length=128, blank=False)
+    former_name = models.CharField("former name", max_length=128, blank=True)
+    historical_strain = models.BooleanField("historical strain", help_text = "Strain does not exist in Germany", default=False)
     parent_1 = models.ForeignKey('self', verbose_name='Parent 1', on_delete=models.PROTECT, related_name='pombe_parent_1', help_text='Main parental strain', blank=True, null=True)
     parent_2 = models.ForeignKey('self', verbose_name='Parent 2', on_delete=models.PROTECT, related_name='pombe_parent_2', help_text='Only for crosses', blank=True, null=True)
     mating_type = models.CharField("mating type", choices=POMBE_MATING_TYPE_CHOICES, max_length=20, blank=True)
@@ -420,7 +427,6 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
                                                                  ("triploid", "triploid"), ("tetraploid", "tetraploid")),
                                                                  blank = True)
-
     integrated_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_integrated_plasmids', blank=True)
     cassette_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_cassette_plasmids', help_text='Tagging and knock out plasmids', blank=True)
     episomal_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_episomal_plasmids', blank=True, through='ScPombeStrainEpisomalPlasmid')
