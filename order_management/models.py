@@ -121,7 +121,9 @@ class MsdsForm(models.Model):
 #                 ORDER MODEL                   #
 #################################################
 
-ORDER_STATUS_CHOICES = (('submitted', 'submitted'), 
+ORDER_STATUS_CHOICES = (
+('unsubmitted', 'unsubmitted'),
+('submitted', 'submitted'),
 ('approved', 'approved'),
 ('arranged', 'arranged'), 
 ('delivered', 'delivered'),
@@ -153,7 +155,8 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     ghs_pictogram = models.CharField("GHS pictogram", max_length=255, blank=True)
     msds_form = models.ForeignKey(MsdsForm, on_delete=models.PROTECT, blank=True, null=True)
     hazard_level_pregnancy = models.CharField("Hazard level for pregnancy", max_length=255, choices=HAZARD_LEVEL_PREGNANCY_CHOICES, default='none', blank=True)
-    
+    email_sent = models.BooleanField(default=False, null=True)
+
     created_date_time = models.DateTimeField("created", auto_now_add=True, null=True)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True, null=True)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)

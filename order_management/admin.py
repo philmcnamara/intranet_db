@@ -17,7 +17,7 @@ from django import forms
 
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
-from my_admin.models import GeneralSetting
+from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
 
 #################################################
 #        ADDED FUNCTIONALITIES IMPORTS          #
@@ -354,7 +354,7 @@ def change_order_status_to_delivered(modeladmin, request, queryset):
         messages.error(request, 'Nice try, you are not allowed to do that.')
         return
     else:
-        for order in queryset.filter(status = "approved"):
+        for order in queryset.filter(status = "arranged"):
             order.status = 'delivered'
             order.delivered_date = datetime.date.today()
             
@@ -412,7 +412,7 @@ def change_order_status_to_approved(modeladmin, request, queryset):
 change_order_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
 
 def export_chemicals(modeladmin, request, queryset):
-    """Export all chemicals. A chemical is defines as an order
+    """Export all chemicals. A chemical is defined as an order
     which has a non-null ghs_pictogram field and is not used up"""
 
     queryset = Order.objects.exclude(status="used up").annotate(text_len=Length('ghs_pictogram')).filter(text_len__gt=0).order_by('-id')
@@ -465,9 +465,10 @@ def copy_order(modeladmin, request, queryset):
         clone = copy.copy(order)
         clone.id = None
         clone.created_by = request.user
-        clone.status = 'submitted'
+        clone.status = "unsubmitted"
         clone.save()
         clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
+        clone.email_sent=False
         clone.save()
     copy_order.short_description = "Copy selected orders"
 
@@ -622,84 +623,85 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 obj.approval.create(activity_type='created', activity_user=obj.history.latest().created_by)
                 Order.objects.filter(id=obj.pk).update(created_approval_by_pi=True)
 
-            # Send email to Lab Managers if an order is set as urgent
-            if obj.urgent:
-                message = """Dear lab manager(s),
-
-                {} {} has just placed an urgent order for {} {} - {}.
-
-                Regards,
-                The {}
-
-                """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description, SITE_TITLE)
-                message = inspect.cleandoc(message)
-                try:
-                    general_setting = GeneralSetting.objects.all().first()
-                    send_mail('New urgent order', 
-                    message, 
-                    SERVER_EMAIL_ADDRESS,
-                    [general_setting.order_email_addresses],
-                    fail_silently=False,)
-                    messages.success(request, 'The lab managers have been informed of your urgent order.')
-                except:
-                    messages.warning(request, 'Your urgent order was added to the Order list. However, the lab managers have not been informed of it.')
         else:
             
             # Existing orders
             
-            # Allow only Lab and Order managers to change an order
-            if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-                raise PermissionDenied
+            # Users can edit their own orders before they are approved, but after approval only lab managers or order managers can edit them
+            # if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+            #     raise PermissionDenied
             
-            else:
-                order = Order.objects.get(pk=obj.pk)
-                
-                # If the status of an order changes to the following
-                if obj.status != order.status:
-                    if not order.order_manager_created_date_time:
-                        
-                        # If an order's status changed from 'submitted' to any other, 
-                        # set the date-time for order_manager_created_date_time to the
-                        # current date-time
-                        if obj.status in ['open', 'arranged', 'delivered']:
-                            obj.order_manager_created_date_time = timezone.now()
+            # else:
+            order = Order.objects.get(pk=obj.pk)
+            
+            # If the status of an order changes to the following
+            if obj.status != order.status:
+                if not order.order_manager_created_date_time:
                     
-                    # If an order does not have a delivery date and its status changes
-                    # to 'delivered', set the date for delivered_date to the current
-                    # date. If somebody requested a delivery notification, send it and
-                    # set sent_email to true to remember that an email has already been 
-                    # sent out
-                    if not order.delivered_date:
-                        if obj.status == "delivered":
-                            obj.delivered_date = datetime.date.today()
-                            if order.delivery_alert:
-                                if not order.sent_email:
-                                    obj.sent_email = True
-                                    message = """Dear {},
+                    # If an order's status changed from 'submitted' to any other, 
+                    # set the date-time for order_manager_created_date_time to the
+                    # current date-time
+                    if obj.status in ['approved', 'arranged', 'delivered']:
+                        obj.order_manager_created_date_time = timezone.now()
+                
+                # If an order does not have a delivery date and its status changes
+                # to 'delivered', set the date for delivered_date to the current
+                # date. If somebody requested a delivery notification, send it and
+                # set sent_email to true to remember that an email has already been 
+                # sent out
+                if not order.delivered_date:
+                    if obj.status == "delivered":
+                        obj.delivered_date = datetime.date.today()
+                        if order.delivery_alert:
+                            if not order.sent_email:
+                                obj.sent_email = True
+                                message = """Dear {},
 
-                                    your order #{} for {} has just been delivered.
+                                your order #{} for {} has just been delivered.
 
-                                    Regards,
-                                    The {}
-
-                                    """.format(obj.created_by.first_name, obj.pk, obj.part_description, SITE_TITLE)
-                                    
-                                    message = inspect.cleandoc(message)
-                                    try:
-                                        send_mail('Delivery notification', 
-                                        message, 
-                                        SERVER_EMAIL_ADDRESS,
-                                        [obj.created_by.email],
-                                        fail_silently=False,)
-                                        messages.success(request, 'Delivery notification was sent.')
-                                    except:
-                                        messages.warning(request, 'Could not send delivery notification.')
+                                """.format(obj.created_by.first_name, obj.pk, obj.part_description, SITE_TITLE)
+                                
+                                message = inspect.cleandoc(message)
+                                try:
+                                    send_mail('Delivery notification', 
+                                    message, 
+                                    SERVER_EMAIL_ADDRESS,
+                                    [obj.created_by.email],
+                                    fail_silently=False,)
+                                    messages.success(request, 'Delivery notification was sent.')
+                                except:
+                                    messages.warning(request, 'Could not send delivery notification.')
+            if obj.status == "unsubmitted":
+                obj.status="submitted"
+                obj.save()
+            
             obj.save()
             
             # Delete order history for used-up or cancelled items
             if obj.status in ["used up", 'cancelled'] and obj.history.exists():
                 obj_history = obj.history.all()
                 obj_history.delete()
+    
+        if obj.status == "submitted" and obj.email_sent == False:
+
+            message = """Dear Order Approval Manager,
+
+            {} {} has placed a new order for {} {} - {} - {}.
+
+            """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description, obj.comment)
+            message = inspect.cleandoc(message)
+
+            try:
+                send_mail('New order placed', 
+                message, 
+                SERVER_EMAIL_ADDRESS,
+                ORDER_APPROVAL_EMAIL_ADDRESSES,
+                fail_silently=False,)
+                messages.success(request, 'The order approval manager has been notified of your request')
+                obj.email_sent=True
+                obj.save()
+            except:
+                messages.warning(request, 'Your order was added to the order list. However, the approval request email failed to send.')
 
     def get_queryset(self, request):
         
@@ -717,34 +719,25 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def get_readonly_fields(self, request, obj=None):
         
         # Specifies which fields should be shown as read-only and when
-        
         if obj:
             if self.can_change:
-                return ['urgent', 'delivery_alert', 'delivered_date', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time',]
+                return ['urgent', 'delivery_alert', 'delivered_date', 'status', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time',]
             else:
-                return ['supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'status', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'delivered_date', 'cas_number', 
-            'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'order_manager_created_date_time', 'created_date_time', 'last_changed_date_time', 'created_by',]
+                return ['supplier','supplier_part_no', 'internal_order_no', 'status', 'part_description', 'quantity', 
+                        'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'delivered_date', 'cas_number', 
+                        'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'order_manager_created_date_time', 'created_date_time', 
+                        'last_changed_date_time', 'created_by',]
         else:
             return ['order_manager_created_date_time', 'created_date_time',  'last_changed_date_time',]
 
     def add_view(self, request, extra_context=None):
         
         # Specifies which fields should be shown in the add view
-
-        if request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists():            
-            self.fields = ('supplier','supplier_part_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'status', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
+        self.fields = ('supplier','supplier_part_no', 'part_description', 'quantity', 
+            'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
             'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
-            self.raw_id_fields = []
-            self.autocomplete_fields = []
-            
-        else:
-            self.fields = ('supplier','supplier_part_no', 'part_description', 'quantity', 'price', 'cost_unit', 'urgent',
-            'delivery_alert', 'location', 'comment', 'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy')
-            self.raw_id_fields = ['msds_form']
-            self.autocomplete_fields = []
-        
+        self.raw_id_fields = ['msds_form']
+        self.autocomplete_fields = []
         return super(OrderPage,self).add_view(request, extra_context=extra_context)
 
     def change_view(self, request, object_id, extra_context=None):
@@ -756,23 +749,22 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         self.can_change = False
 
         if object_id:
-            
+
             extra_context = extra_context or {}
-
-            # Regular users can only edit their own orders, lab/order managers can edit everything
-            if (Order.objects.get(id=object_id).created_by == request.user or request.user.groups.filter(name='Lab manager').exists() or 
-                request.user.groups.filter(name='Order manager').exists()):
+            order = Order.objects.get(id=object_id)
+            # Regular users can only edit their own orders before they are approved
+            # Lab managers and order managers can edit all orders
+            if (order.created_by == request.user and (order.status == "submitted" or order.status == "unsubmitted") or 
+                request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
                 self.can_change = True
-
                 extra_context = {'show_close': True,
                             'show_save_and_add_another': True,
                             'show_save_and_continue': True,
                             'show_save_as_new': False,
-                            'show_save': True
+                            'show_save': True,
                             }
             
             else:
-
                 extra_context = {'show_close': True,
                             'show_save_and_add_another': False,
                             'show_save_and_continue': False,
@@ -780,10 +772,10 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                             'show_save': False
                             }
 
-        self.fields = ('supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'status', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
-            'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
-            'delivered_date', 'created_by',)
+        self.fields = ('supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 'status',
+                'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
+                'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
+                'delivered_date', 'created_by')
         return super(OrderPage,self).change_view(request, object_id, extra_context=extra_context)
     
     def changelist_view(self, request, extra_context=None):
@@ -856,11 +848,10 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         status = instance.status
         urgent = instance.urgent
         
-        if status == "submitted":
-            if urgent:
-                return mark_safe('<span style="width:100%; height:100%; background-color:#F5B7B1;">{}</span>'.format('Urgent'))
-            else:
-                return mark_safe('<span style="width:100%; height:100%; background-color:#F5B041;">{}</span>'.format(status.capitalize()))
+        if status == "unsubmitted":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#ff0000;">{}</span>'.format(status.capitalize()))
+        elif status == "submitted":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#F5B041;">{}</span>'.format(status.capitalize()))
         # elif status == "open":
         #     return mark_safe('<span style="width:100%; height:100%; background-color:#F9E79F;">{}</span>'.format(status.capitalize()))
         elif status == "arranged":
@@ -1055,3 +1046,10 @@ class LocationPage(admin.ModelAdmin):
     list_display_links = ('name', )
     list_per_page = 25
     ordering = ['name']
+
+
+# class HideStatus(CreateView):
+#     def get_context_data(self, *args, **kwargs):
+#         context = super(HideStatus, self).get_context_data(*args, **kwargs)
+#         context['my_additional_context'] = my_object
+#         return context
