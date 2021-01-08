@@ -333,28 +333,28 @@ class OrderExportResource(resources.ModelResource):
 #################################################
 
 def change_order_status_to_arranged(modeladmin, request, queryset):
-    """Change the status of selected orders from open to arranged"""
+    """Change the status of selected orders from approved to arranged"""
     
     # Only Lab or Order Manager can use this action
     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
         messages.error(request, 'Nice try, you are not allowed to do that.')
         return
     else:
-        for order in queryset.filter(status = "open"):
+        for order in queryset.filter(status = "approved"):
             order.status = 'arranged'
             order.save()
 change_order_status_to_arranged.short_description = "Change STATUS of selected to ARRANGED"
 change_order_status_to_arranged.acts_on_all = True
 
 def change_order_status_to_delivered(modeladmin, request, queryset):
-    """Change the status of selected orders from arranged to delivered"""
+    """Change the status of selected orders from approved to delivered"""
     
     # Only Lab or Order Manager can use this action
     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
         messages.error(request, 'Nice try, you are not allowed to do that.')
         return
     else:
-        for order in queryset.filter(status = "arranged"):
+        for order in queryset.filter(status = "approved"):
             order.status = 'delivered'
             order.delivered_date = datetime.date.today()
             
@@ -587,7 +587,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
-    search_fields = ['id', 'part_description', 'supplier_part_no']
+    search_fields = ['id', 'supplier', 'supplier_part_no', 'part_description', 'status', 'comment']
     
     def save_model(self, request, obj, form, change):
         
@@ -861,16 +861,20 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 return mark_safe('<span style="width:100%; height:100%; background-color:#F5B7B1;">{}</span>'.format('Urgent'))
             else:
                 return mark_safe('<span style="width:100%; height:100%; background-color:#F5B041;">{}</span>'.format(status.capitalize()))
-        elif status == "open":
-            return mark_safe('<span style="width:100%; height:100%; background-color:#F9E79F;">{}</span>'.format(status.capitalize()))
+        # elif status == "open":
+        #     return mark_safe('<span style="width:100%; height:100%; background-color:#F9E79F;">{}</span>'.format(status.capitalize()))
         elif status == "arranged":
-            return mark_safe('<span style="width:100%; height:100%; background-color:#ABEBC6;">{}</span>'.format(status.capitalize()))
+            return mark_safe('<span style="width:100%; height:100%; background-color:#0099cc;">{}</span>'.format(status.capitalize()))
+        elif status == "approved":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#00cc00;">{}</span>'.format(status.capitalize()))
+        # elif status == "delivered":
+        #     return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(instance.delivered_date.strftime('%d.%m.%Y') if instance.delivered_date else status.capitalize()))
         elif status == "delivered":
-            return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(instance.delivered_date.strftime('%d.%m.%Y') if instance.delivered_date else status.capitalize()))
+            return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(status.capitalize()))
         elif status == "cancelled":
             return mark_safe('<span style="width:100%; height:100%; background-color:#000000; color: white;">{}</span>'.format(status.capitalize()))
-        elif status == "used up":
-            return mark_safe('<span style="width:100%; height:100%; border-style: double;">{}</span>'.format(status.capitalize()))
+        # elif status == "used up":
+        #     return mark_safe('<span style="width:100%; height:100%; border-style: double;">{}</span>'.format(status.capitalize()))
 
     coloured_status.short_description = 'Status'
     coloured_status.admin_order_field = 'status'
