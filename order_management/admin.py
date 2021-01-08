@@ -46,6 +46,7 @@ from jsmin import jsmin
 
 import xlrd
 import csv
+import copy
 
 #################################################
 #                OTHER IMPORTS                  #
@@ -384,18 +385,31 @@ def change_order_status_to_delivered(modeladmin, request, queryset):
 
 change_order_status_to_delivered.short_description = "Change STATUS of selected to DELIVERED"
 
-def change_order_status_to_used_up(modeladmin, request, queryset):
-    """Change the status of selected orders from delivered to used up"""
+# def change_order_status_to_used_up(modeladmin, request, queryset):
+#     """Change the status of selected orders from delivered to used up"""
     
-    # Only Lab or Order Manager can use this action
+#     # Only Lab or Order Manager can use this action
+#     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+#         messages.error(request, 'Nice try, you are not allowed to do that.')
+#         return
+#     else:
+#         for order in queryset.filter(status = "delivered"):
+#             order.status = 'used up'
+#             order.save()
+# change_order_status_to_used_up.short_description = "Change STATUS of selected to USED UP"
+
+def change_order_status_to_approved(modeladmin, request, queryset):
+    """Change the status of selected orders to approved"""
+    
+    # Only PI or Order Approver can use this action
     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
         messages.error(request, 'Nice try, you are not allowed to do that.')
         return
     else:
-        for order in queryset.filter(status = "delivered"):
-            order.status = 'used up'
+        for order in queryset.filter(status = "submitted"):
+            order.status = 'approved'
             order.save()
-change_order_status_to_used_up.short_description = "Change STATUS of selected to USED UP"
+change_order_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
 
 def export_chemicals(modeladmin, request, queryset):
     """Export all chemicals. A chemical is defines as an order
@@ -444,6 +458,18 @@ def export_orders(modeladmin, request, queryset):
             wr.writerow(row_values)
     return response
 export_orders.short_description = "Export selected orders"
+
+def copy_order(modeladmin, request, queryset):
+    '''creates a copy of an order, which can be used as a template for a reorder'''
+    for order in queryset:
+        clone = copy.copy(order)
+        clone.id = None
+        clone.created_by = request.user
+        clone.status = 'submitted'
+        clone.save()
+        clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
+        clone.save()
+    copy_order.short_description = "Copy selected orders"
 
 #################################################
 #                 ORDER PAGES                   #
@@ -560,7 +586,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     inlines = [OrderExtraDocInline, AddOrderExtraDocInline]
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
-    actions = [change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_used_up, export_orders, export_chemicals, mass_update]
+    actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
     search_fields = ['id', 'part_description', 'supplier_part_no']
     
     def save_model(self, request, obj, form, change):
@@ -733,8 +759,9 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             
             extra_context = extra_context or {}
 
-            if request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists():
-
+            # Regular users can only edit their own orders, lab/order managers can edit everything
+            if (Order.objects.get(id=object_id).created_by == request.user or request.user.groups.filter(name='Lab manager').exists() or 
+                request.user.groups.filter(name='Order manager').exists()):
                 self.can_change = True
 
                 extra_context = {'show_close': True,

@@ -122,11 +122,10 @@ class MsdsForm(models.Model):
 #################################################
 
 ORDER_STATUS_CHOICES = (('submitted', 'submitted'), 
-('open', 'open'),
+('approved', 'approved'),
 ('arranged', 'arranged'), 
 ('delivered', 'delivered'),
-('cancelled', 'cancelled'),
-('used up', 'used up'))
+('cancelled', 'cancelled'))
 
 HAZARD_LEVEL_PREGNANCY_CHOICES = (('none', 'none'), 
 ('yellow', 'yellow'), 
