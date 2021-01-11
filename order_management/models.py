@@ -81,6 +81,25 @@ class Location(models.Model):
         super(Location, self).save(force_insert, force_update, using, update_fields)
 
 #################################################
+#             ORDER SUPPLIER MODEL              #
+#################################################
+
+class SupplierOption(models.Model):
+    
+    name = models.CharField("name", max_length=255, unique=True, blank=False)
+    status = models.BooleanField("deactivate?", help_text="Check it, if you want to HIDE this supplier from the 'Add new order' form ", default=False)
+    
+    class Meta:
+        ordering = ["name",]
+
+    def __str__(self):
+        return self.name
+    
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        
+        super(SupplierOption, self).save(force_insert, force_update, using, update_fields)
+
+#################################################
 #               MSDS FORD MODEL                 #
 #################################################
 
@@ -135,18 +154,19 @@ HAZARD_LEVEL_PREGNANCY_CHOICES = (('none', 'none'),
 
 class Order(models.Model, SaveWithoutHistoricalRecord):
     
-    supplier = models.CharField("supplier", max_length=255, blank=False)
+    # supplier = models.CharField("supplier", max_length=255, blank=False)
+    supplier = models.ForeignKey(SupplierOption, on_delete=models.PROTECT, null=True, blank=False)
     supplier_part_no = models.CharField("supplier Part-No", max_length=255, blank=False)
     internal_order_no = models.CharField("internal order number", max_length=255, blank=True)
     part_description = models.CharField("part description", max_length=255, blank=False)
     quantity = models.CharField("quantity", max_length=255, blank=False)
     price = models.CharField("price", max_length=255, blank=True)
-    cost_unit = models.ForeignKey(CostUnit, on_delete=models.PROTECT, default=1, null=True, blank=False)
+    cost_unit = models.ForeignKey(CostUnit, on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
     delivery_alert = models.BooleanField("delivery notification?", default=False)
     sent_email = models.BooleanField(default=False, null=True)
-    location = models.ForeignKey(Location, on_delete=models.PROTECT, null=True, blank=False)
+    location = models.ForeignKey(Location, on_delete=models.PROTECT, null=True, blank=True)
     comment =  models.TextField("comments", blank=True)
     order_manager_created_date_time = models.DateTimeField("created in OrderManager", blank=True, null=True)
     delivered_date = models.DateField("delivered", blank=True, default=None, null=True)
@@ -185,7 +205,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         
         # Remove airquote, new-line and hash characters from specific fields
-        self.supplier = self.supplier.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
+        #self.supplier = self.supplier.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.supplier_part_no = self.supplier_part_no.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.part_description = self.part_description.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.quantity = self.quantity.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")

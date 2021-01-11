@@ -57,6 +57,7 @@ from .models import Order
 from .models import Location
 from .models import CostUnit
 from .models import MsdsForm
+from .models import SupplierOption
 
 import datetime
 import time
@@ -315,7 +316,7 @@ class OrderChemicalExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id','supplier', 'supplier_part_no', 'part_description', 'quantity', "location__name", "cas_number", 
+        fields = ('id','supplier__name', 'supplier_part_no', 'part_description', 'quantity', "location__name", "cas_number", 
         "ghs_pictogram", 'hazard_level_pregnancy')
 
 class OrderExportResource(resources.ModelResource):
@@ -323,7 +324,7 @@ class OrderExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id', 'internal_order_no', 'supplier', 'supplier_part_no', 'part_description', 'quantity', 
+        fields = ('id', 'internal_order_no', 'supplier__name', 'supplier_part_no', 'part_description', 'quantity', 
             'price', 'cost_unit__name', 'status', 'location__name', 'comment', 'url', 'delivered_date', 'cas_number', 
             'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
@@ -504,6 +505,20 @@ class SearchFieldOptCostUnit(StrField):
     def get_lookup_name(self):
         return 'cost_unit__name'
 
+class SearchFieldSupplierOption(StrField):
+    """Create a list of unique supplier units for search"""
+
+    model = SupplierOption
+    name = 'supplier'
+    suggest_options = True
+
+    def get_options(self):
+        return SupplierOption.objects.all().order_by('name').\
+        values_list('name', flat=True)
+
+    def get_lookup_name(self):
+        return 'supplier__name'
+
 class SearchFieldOptSupplier(StrField):
     """Create a list of unique cost units for search"""
 
@@ -546,7 +561,7 @@ class SearchFieldOptLastnameOrder(SearchFieldOptLastname):
 class OrderQLSchema(DjangoQLSchema):
     '''Customize search functionality'''
     
-    include = (Order, User, CostUnit, Location) # Include only the relevant models to be searched
+    include = (Order, User, CostUnit, Location, SupplierOption) # Include only the relevant models to be searched
 
     suggest_options = {
         Order: ['status', 'supplier', 'urgent'],
@@ -581,7 +596,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
 
 class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin):
     
-    list_display = ('custom_internal_order_no', 'item_description', 'supplier_and_part_no', 'quantity', 'trimmed_comment' ,'location', 'msds_link', 'coloured_status', "created_by")
+    list_display = ('custom_internal_order_no', 'item_description', 'supplier', 'supplier_part_no', 'quantity', 'trimmed_comment' ,'location', 'msds_link', 'coloured_status', "created_by")
     list_display_links = ('custom_internal_order_no', )
     list_per_page = 25
     inlines = [OrderExtraDocInline, AddOrderExtraDocInline]
@@ -686,7 +701,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
             message = """Dear Order Approval Manager,
 
-            {} {} has placed a new order for {} {} - {} - {}.
+            {} {} has placed a new order for {} item {} - {} 
+            Comment: {}
 
             """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description, obj.comment)
             message = inspect.cleandoc(message)
@@ -823,24 +839,24 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     item_description.short_description = 'Part description'
     item_description.admin_order_field = 'part_description'
 
-    def supplier_and_part_no(self, instance):
-        '''Custom supplier and part number field for changelist_view'''
+    # def supplier_and_part_no(self, instance):
+    #     '''Custom supplier and part number field for changelist_view'''
 
-        supplier = instance.supplier.strip() if instance.supplier.lower() != "none" else ""
-        for string in ["GmbH", 'Chemie']:
-            supplier = supplier.replace(string, "").strip()
-        supplier_part_no = instance.supplier_part_no.strip() if instance.supplier_part_no  != "none" else ""
-        if instance.status != "cancelled":  
-            if supplier_part_no:
-                return '{} - {}'.format(supplier, supplier_part_no)
-            else:
-                return '{}'.format(supplier)
-        else:
-            if supplier_part_no:
-                return mark_safe('<span style="text-decoration: line-through;">{} - {}</span>'.format(supplier, supplier_part_no))
-            else:
-                return mark_safe('<span style="text-decoration: line-through;">{}</span>'.format(supplier))
-    supplier_and_part_no.short_description = 'Supplier - Part no.'
+    #     supplier = instance.supplier.strip() if instance.supplier.lower() != "none" else ""
+    #     for string in ["GmbH", 'Chemie']:
+    #         supplier = supplier.replace(string, "").strip()
+    #     supplier_part_no = instance.supplier_part_no.strip() if instance.supplier_part_no  != "none" else ""
+    #     if instance.status != "cancelled":  
+    #         if supplier_part_no:
+    #             return '{} - {}'.format(supplier, supplier_part_no)
+    #         else:
+    #             return '{}'.format(supplier)
+    #     else:
+    #         if supplier_part_no:
+    #             return mark_safe('<span style="text-decoration: line-through;">{} - {}</span>'.format(supplier, supplier_part_no))
+    #         else:
+    #             return mark_safe('<span style="text-decoration: line-through;">{}</span>'.format(supplier))
+    # supplier_and_part_no.short_description = 'Supplier - Part no.'
 
     def coloured_status(self, instance):
         '''Custom coloured status field for changelist_view'''
@@ -913,13 +929,16 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                     kwargs["queryset"] = User.objects.exclude(id__in=[1, 20, 36]).order_by('last_name')
                 kwargs['initial'] = request.user.id
 
-            # Sort cost_unit and locations fields by name
+            # Sort cost_unit, location, and supplier fields by name
             
             if db_field.name == "cost_unit":
                 kwargs["queryset"] = CostUnit.objects.exclude(status=True).order_by('name')
 
             if db_field.name == "location":
                 kwargs["queryset"] = Location.objects.exclude(status=True).order_by('name')
+
+            if db_field.name == "supplier":
+                kwargs["queryset"] = SupplierOption.objects.exclude(status=True).order_by('name')
 
         return super(OrderPage, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -1047,6 +1066,16 @@ class LocationPage(admin.ModelAdmin):
     list_per_page = 25
     ordering = ['name']
 
+#################################################
+#           ORDER SUPPLIER PAGES                #
+#################################################
+
+class SupplierOptionPage(admin.ModelAdmin):
+    
+    list_display = ('name', 'status')
+    list_display_links = ('name', )
+    list_per_page = 25
+    ordering = ['name']
 
 # class HideStatus(CreateView):
 #     def get_context_data(self, *args, **kwargs):
