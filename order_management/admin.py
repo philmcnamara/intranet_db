@@ -403,7 +403,7 @@ def change_order_status_to_approved(modeladmin, request, queryset):
     """Change the status of selected orders to approved"""
     
     # Only PI or designated staff can use this action
-    if not (request.user.groups.filter(name='Approval Manager').exists():
+    if not (request.user.groups.filter(name='Approval Manager').exists()):
         messages.error(request, 'Nice try, you are not allowed to do that.')
         return
     else:
