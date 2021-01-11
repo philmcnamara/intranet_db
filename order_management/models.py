@@ -165,7 +165,6 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
     delivery_alert = models.BooleanField("delivery notification?", default=False)
-    sent_email = models.BooleanField(default=False, null=True)
     location = models.ForeignKey(Location, on_delete=models.PROTECT, null=True, blank=True)
     comment =  models.TextField("comments", blank=True)
     order_manager_created_date_time = models.DateTimeField("created in OrderManager", blank=True, null=True)
@@ -175,7 +174,8 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     ghs_pictogram = models.CharField("GHS pictogram", max_length=255, blank=True)
     msds_form = models.ForeignKey(MsdsForm, on_delete=models.PROTECT, blank=True, null=True)
     hazard_level_pregnancy = models.CharField("Hazard level for pregnancy", max_length=255, choices=HAZARD_LEVEL_PREGNANCY_CHOICES, default='none', blank=True)
-    email_sent = models.BooleanField(default=False, null=True)
+    approval_email = models.BooleanField(default=False, null=True)
+    delivery_email = models.BooleanField(default=False, null=True)
 
     created_date_time = models.DateTimeField("created", auto_now_add=True, null=True)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True, null=True)

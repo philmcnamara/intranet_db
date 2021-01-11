@@ -362,11 +362,11 @@ def change_order_status_to_delivered(modeladmin, request, queryset):
             # If an order does not have a delivery date and its status changes
             # to 'delivered', set the date for delivered_date to the current
             # date. If somebody requested a delivery notification, send it and
-            # set sent_email to true to remember that an email has already been 
+            # set delivery_email to true to remember that an email has already been 
             # sent out
             if order.delivery_alert:
-                if not order.sent_email:
-                    order.sent_email = True
+                if not order.delivery_email:
+                    order.delivery_email = True
                     message = """Dear {},
 
                     your order #{} for {} has just been delivered.
@@ -402,8 +402,8 @@ change_order_status_to_delivered.short_description = "Change STATUS of selected 
 def change_order_status_to_approved(modeladmin, request, queryset):
     """Change the status of selected orders to approved"""
     
-    # Only PI or Order Approver can use this action
-    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+    # Only PI or designated staff can use this action
+    if not (request.user.groups.filter(name='Approval Manager').exists():
         messages.error(request, 'Nice try, you are not allowed to do that.')
         return
     else:
@@ -469,7 +469,7 @@ def copy_order(modeladmin, request, queryset):
         clone.status = "unsubmitted"
         clone.save()
         clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
-        clone.email_sent=False
+        clone.approval_email=False
         clone.save()
     copy_order.short_description = "Copy selected orders"
 
@@ -662,14 +662,14 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 # If an order does not have a delivery date and its status changes
                 # to 'delivered', set the date for delivered_date to the current
                 # date. If somebody requested a delivery notification, send it and
-                # set sent_email to true to remember that an email has already been 
+                # set delivery_email to true to remember that an email has already been 
                 # sent out
                 if not order.delivered_date:
                     if obj.status == "delivered":
                         obj.delivered_date = datetime.date.today()
                         if order.delivery_alert:
-                            if not order.sent_email:
-                                obj.sent_email = True
+                            if not order.delivery_email:
+                                obj.delivery_email = True
                                 message = """Dear {},
 
                                 your order #{} for {} has just been delivered.
@@ -697,7 +697,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 obj_history = obj.history.all()
                 obj_history.delete()
     
-        if obj.status == "submitted" and obj.email_sent == False:
+        if obj.status == "submitted" and obj.approval_email == False:
 
             message = """Dear Order Approval Manager,
 
@@ -714,7 +714,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 ORDER_APPROVAL_EMAIL_ADDRESSES,
                 fail_silently=False,)
                 messages.success(request, 'The order approval manager has been notified of your request')
-                obj.email_sent=True
+                obj.approval_email=True
                 obj.save()
             except:
                 messages.warning(request, 'Your order was added to the order list. However, the approval request email failed to send.')
