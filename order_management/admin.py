@@ -708,7 +708,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description)
 
             if obj.comment:
-                message += "\n\nComment:{}".format(obj.comment)
+                message += "\nComment: {}".format(obj.comment)
 
             message = inspect.cleandoc(message)
             try:
