@@ -701,12 +701,16 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
             message = """Dear Order Approval Manager,
 
-            {} {} has placed a new order for {} item {} - {} 
-            Comment: {}
+            {} {} has placed a new order for {} item {} - {}
 
-            """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description, obj.comment)
+            You can see all orders pending approval here: https://baumann.imb.uni-mainz.de/order_management/order/?q=submitted 
+
+            """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description)
+
+            if obj.comment:
+                message += "\n\nComment:{}".format(obj.comment)
+
             message = inspect.cleandoc(message)
-
             try:
                 send_mail('New order placed', 
                 message, 
