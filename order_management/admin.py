@@ -603,7 +603,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
-    search_fields = ['id', 'supplier', 'supplier_part_no', 'part_description', 'status', 'comment']
+    search_fields = ['id', 'supplier__name', 'supplier_part_no', 'part_description', 'status', 'comment']
     
     def save_model(self, request, obj, form, change):
         
@@ -862,7 +862,6 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         '''Custom coloured status field for changelist_view'''
 
         status = instance.status
-        urgent = instance.urgent
         
         if status == "unsubmitted":
             return mark_safe('<span style="width:100%; height:100%; background-color:#ff0000;">{}</span>'.format(status.capitalize()))
