@@ -67,7 +67,7 @@ def approve_records(modeladmin, request, queryset):
         if request.user.labuser.is_principal_investigator:
             model = order_approval_records[0].content_object._meta.model
             order_ids = order_approval_records.values_list('object_id', flat=True)
-            model.objects.filter(id__in=order_ids).update(created_approval_by_pi=True)
+            model.objects.filter(id__in=order_ids).update(status="approved")
             order_approval_records.delete()
             success_message = True
         else:
