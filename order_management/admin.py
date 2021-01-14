@@ -687,6 +687,10 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                                 except:
                                     messages.warning(request, 'Could not send delivery notification.')
             if obj.status == "unsubmitted":
+                # Add approval record
+                if not request.user.labuser.is_principal_investigator:
+                    obj.approval.create(activity_type='created', activity_user=obj.history.latest().created_by)
+                    Order.objects.filter(id=obj.pk).update(created_approval_by_pi=True)
                 obj.status="submitted"
                 obj.save()
             

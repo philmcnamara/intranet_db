@@ -171,8 +171,8 @@ class ContentTypeFilter(admin.SimpleListFilter):
 
 class RecordToBeApprovedPage(admin.ModelAdmin):
     
-    #list_display = ('id', 'titled_content_type', 'record_link', 'coloured_activity_type', 'activity_user', 'history_link', 'message', 'message_sent','edited', )
-    list_display = ('id', 'titled_content_type', 'coloured_activity_type', 'activity_user', 'message', 'message_sent','edited', )
+    list_display = ('id', 'titled_content_type', 'record_link', 'coloured_activity_type', 'activity_user', 'history_link', 'message', 'message_sent','edited', )
+    #list_display = ('id', 'titled_content_type', 'coloured_activity_type', 'activity_user', 'message', 'message_sent','edited', )
     list_display_links = ('id', )
     list_per_page = 50
     ordering = ['content_type', '-activity_type', 'object_id']
