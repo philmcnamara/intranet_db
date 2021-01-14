@@ -158,7 +158,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     supplier = models.ForeignKey(SupplierOption, on_delete=models.PROTECT, null=True, blank=False)
     supplier_part_no = models.CharField("supplier Part-No", max_length=255, blank=False)
     internal_order_no = models.CharField("internal order number", max_length=255, blank=True)
-    part_description = models.CharField("part description", max_length=255, blank=False)
+    part_description = models.TextField("part description", blank=False)
     quantity = models.CharField("quantity", max_length=255, blank=False)
     price = models.CharField("price", max_length=255, blank=True)
     cost_unit = models.ForeignKey(CostUnit, on_delete=models.PROTECT, null=True, blank=True)
