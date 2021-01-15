@@ -176,6 +176,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     hazard_level_pregnancy = models.CharField("Hazard level for pregnancy", max_length=255, choices=HAZARD_LEVEL_PREGNANCY_CHOICES, default='none', blank=True)
     approval_email = models.BooleanField(default=False, null=True)
     delivery_email = models.BooleanField(default=False, null=True)
+    cloned = models.BooleanField(default=False, null=True)
 
     created_date_time = models.DateTimeField("created", auto_now_add=True, null=True)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True, null=True)

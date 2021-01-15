@@ -470,6 +470,7 @@ def copy_order(modeladmin, request, queryset):
         clone.save()
         clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
         clone.approval_email=False
+        clone.cloned=True
         clone.save()
     copy_order.short_description = "Copy selected orders"
 
@@ -707,7 +708,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
             {} {} has placed a new order for {} item {} - {}
 
-            You can see all orders pending approval here: https://baumann.imb.uni-mainz.de/order_management/order/?q=submitted 
+            You can see all items pending approval here: https://baumann.imb.uni-mainz.de/record_approval/recordtobeapproved/
 
             """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description)
 
@@ -741,16 +742,27 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             return qs
 
     def get_readonly_fields(self, request, obj=None):
-        
         # Specifies which fields should be shown as read-only and when
+        always_readonly_fields = ['delivered_date', 'status', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
+        cloned_readonly_fields = ['supplier', 'supplier_part_no', 'internal_order_no', 'part_description', 'location',
+                                  'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
+        restrictive_readonly_fields = ['quantity', 'price', 'cost_unit', 'urgent', 'delivery_alert', 'comment',]
         if obj:
-            if self.can_change:
-                return ['urgent', 'delivery_alert', 'delivered_date', 'status', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time',]
+            # admin-level user
+            if (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or
+                request.user.groups.filter(name='Approval manager').exists()):
+                return always_readonly_fields
+            # non-admin user that can edit the order
+            elif self.can_change:
+                # order from scratch, all fields can be set
+                if obj.cloned == False:
+                    return always_readonly_fields
+                # cloned order, only certain fields editable
+                else:
+                    return always_readonly_fields + cloned_readonly_fields
+            # can't edit, return all fields as read-only
             else:
-                return ['supplier','supplier_part_no', 'internal_order_no', 'status', 'part_description', 'quantity', 
-                        'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'delivered_date', 'cas_number', 
-                        'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'order_manager_created_date_time', 'created_date_time', 
-                        'last_changed_date_time', 'created_by',]
+                return always_readonly_fields + cloned_readonly_fields + restrictive_readonly_fields
         else:
             return ['order_manager_created_date_time', 'created_date_time',  'last_changed_date_time',]
 
