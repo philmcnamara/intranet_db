@@ -15,6 +15,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext as _
 from django import forms
 
+
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
 from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
@@ -62,6 +63,12 @@ from .models import SupplierOption
 import datetime
 import time
 import inspect
+
+# delete button
+from django.contrib.auth.models import Permission
+from order_management.models import Order
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 
 #################################################
 #         CUSTOM MASS UPDATE FUNCTION           #
@@ -785,19 +792,25 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         self.can_change = False
 
         if object_id:
-
             extra_context = extra_context or {}
             order = Order.objects.get(id=object_id)
+            delete_permission = Permission.objects.get(codename="delete_order")
             # Regular users can only edit their own orders before they are approved
             # Lab managers and order managers can edit all orders
             if (order.created_by == request.user and (order.status == "submitted" or order.status == "unsubmitted") or 
                 request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
                 self.can_change = True
+
+                # add delete permission and refresh user permissions cache
+                request.user.user_permissions.add(delete_permission)
+                request.user = get_object_or_404(User, pk=request.user.id)
+
                 extra_context = {'show_close': True,
                             'show_save_and_add_another': True,
                             'show_save_and_continue': True,
                             'show_save_as_new': False,
                             'show_save': True,
+                            'show_delete': True,
                             }
             
             else:
@@ -807,6 +820,11 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                             'show_save_as_new': False,
                             'show_save': False
                             }
+
+                # delete delete permission and refresh cache
+                request.user.user_permissions.remove(delete_permission)
+                request.user = get_object_or_404(User, pk=request.user.id)
+                
 
         self.fields = ('supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 'status',
                 'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
