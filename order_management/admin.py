@@ -55,7 +55,6 @@ import copy
 
 from .models import OrderExtraDoc
 from .models import Order
-from .models import Location
 from .models import CostUnit
 from .models import MsdsForm
 from .models import SupplierOption
@@ -323,8 +322,8 @@ class OrderChemicalExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id','supplier__name', 'supplier_part_no', 'part_description', 'quantity', "location__name", "cas_number", 
-        "ghs_pictogram", 'hazard_level_pregnancy')
+        fields = ('id','supplier__name', 'supplier_part_no', 'part_description', 'quantity', "primary_location",
+        "cas_number", "backup_location", "ghs_pictogram", 'hazard_level_pregnancy')
 
 class OrderExportResource(resources.ModelResource):
     """Defines a custom export resource class for orders"""
@@ -332,7 +331,7 @@ class OrderExportResource(resources.ModelResource):
     class Meta:
         model = Order
         fields = ('id', 'internal_order_no', 'supplier__name', 'supplier_part_no', 'part_description', 'quantity', 
-            'price', 'cost_unit__name', 'status', 'location__name', 'comment', 'url', 'delivered_date', 'cas_number', 
+            'price', 'cost_unit__name', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 
             'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
 
@@ -485,20 +484,6 @@ def copy_order(modeladmin, request, queryset):
 #                 ORDER PAGES                   #
 #################################################
 
-class SearchFieldOptLocation(StrField):
-    """Create a list of unique locations for search"""
-
-    name = 'location'
-    model = Location
-    suggest_options = True
-
-    def get_options(self):
-        return Location.objects.all().order_by('name').\
-        values_list('name', flat=True)
-
-    def get_lookup_name(self):
-        return 'location__name'
-
 class SearchFieldOptCostUnit(StrField):
     """Create a list of unique cost units for search"""
 
@@ -569,7 +554,7 @@ class SearchFieldOptLastnameOrder(SearchFieldOptLastname):
 class OrderQLSchema(DjangoQLSchema):
     '''Customize search functionality'''
     
-    include = (Order, User, CostUnit, Location, SupplierOption) # Include only the relevant models to be searched
+    include = (Order, User, CostUnit, SupplierOption) # Include only the relevant models to be searched
 
     suggest_options = {
         Order: ['status', 'supplier', 'urgent'],
@@ -580,7 +565,7 @@ class OrderQLSchema(DjangoQLSchema):
         
         if model == Order:
             return ['id', SearchFieldOptSupplier() ,'supplier_part_no', 'internal_order_no', SearchFieldOptPartDescription(), SearchFieldOptCostUnit(), 
-            'status', 'urgent', SearchFieldOptLocation(), 'comment', 'delivered_date', 'cas_number', 
+            'status', 'urgent', "primary_location", "backup_location", 'comment', 'delivered_date', 'cas_number', 
             'ghs_pictogram', SearchFieldOptAzardousPregnancy(), 'created_date_time', 'last_changed_date_time', 'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOrder(), SearchFieldOptLastnameOrder()]
@@ -594,7 +579,8 @@ class MyMassUpdateOrderForm(MassUpdateForm):
     class Meta:
         model = Order
         fields = ['supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'location', 'comment', 'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
+            'price', 'cost_unit', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 
+            'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
     
     def clean__validate(self):
         return True
@@ -604,7 +590,8 @@ class MyMassUpdateOrderForm(MassUpdateForm):
 
 class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin):
     
-    list_display = ('custom_internal_order_no', 'item_description', 'supplier', 'supplier_part_no', 'quantity', 'trimmed_comment' ,'location', 'msds_link', 'coloured_status', "created_by")
+    list_display = ('custom_internal_order_no', 'item_description', 'supplier', 'supplier_part_no', 
+                    'quantity', 'trimmed_comment' ,'primary_location', 'msds_link', 'coloured_status', "created_by")
     list_display_links = ('custom_internal_order_no', )
     list_per_page = 25
     inlines = [OrderExtraDocInline, AddOrderExtraDocInline]
@@ -751,7 +738,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def get_readonly_fields(self, request, obj=None):
         # Specifies which fields should be shown as read-only and when
         always_readonly_fields = ['delivered_date', 'status', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
-        cloned_readonly_fields = ['supplier', 'supplier_part_no', 'internal_order_no', 'part_description', 'location',
+        cloned_readonly_fields = ['supplier', 'supplier_part_no', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
                                   'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
         restrictive_readonly_fields = ['quantity', 'price', 'cost_unit', 'urgent', 'delivery_alert', 'comment',]
         if obj:
@@ -777,7 +764,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         
         # Specifies which fields should be shown in the add view
         self.fields = ('supplier','supplier_part_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
+            'price', 'cost_unit', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
+            'comment', 'url', 'cas_number', 
             'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
         self.raw_id_fields = ['msds_form']
         self.autocomplete_fields = []
@@ -827,7 +815,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 
 
         self.fields = ('supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 'status',
-                'price', 'cost_unit', 'urgent', 'delivery_alert', 'location', 'comment', 'url', 'cas_number', 
+                'price', 'cost_unit', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'comment', 'url', 'cas_number', 
                 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
                 'delivered_date', 'created_by')
         return super(OrderPage,self).change_view(request, object_id, extra_context=extra_context)
@@ -971,9 +959,6 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             if db_field.name == "cost_unit":
                 kwargs["queryset"] = CostUnit.objects.exclude(status=True).order_by('name')
 
-            if db_field.name == "location":
-                kwargs["queryset"] = Location.objects.exclude(status=True).order_by('name')
-
             if db_field.name == "supplier":
                 kwargs["queryset"] = SupplierOption.objects.exclude(status=True).order_by('name')
 
@@ -1089,17 +1074,6 @@ class CostUnitPage(admin.ModelAdmin):
     
     list_display = ('name', 'description', 'status')
     list_display_links = ('name',)
-    list_per_page = 25
-    ordering = ['name']
-
-#################################################
-#           ORDER LOCATION PAGES                #
-#################################################
-
-class LocationPage(admin.ModelAdmin):
-    
-    list_display = ('name', 'status')
-    list_display_links = ('name', )
     list_per_page = 25
     ordering = ['name']
 

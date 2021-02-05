@@ -308,7 +308,8 @@ class MyAdminSite(admin.AdminSite):
                                 .exclude(supplier_part_no="") \
                                 .exclude(part_description__iexact="none") \
                                 .order_by('-id')[:50] \
-                                .values("supplier", "supplier_part_no", "part_description", "location", "msds_form", "price", "cas_number", "ghs_pictogram", "hazard_level_pregnancy")
+                                .values("supplier", "supplier_part_no", "part_description", "primary_location", "backup_location", 
+                                "msds_form", "price", "cas_number", "ghs_pictogram", "hazard_level_pregnancy")
 
         lstofprodname = []
         json_line = ""
@@ -330,7 +331,8 @@ class MyAdminSite(admin.AdminSite):
                         order["part_description"], 
                         supplier_part_no, 
                         order["supplier"], 
-                        order["location"],
+                        order["primary_location"],
+                        order["backup_location"],
                         order["msds_form"] if order["msds_form"] else 0,
                         order["price"],
                         order["cas_number"], 
@@ -356,7 +358,8 @@ class MyAdminSite(admin.AdminSite):
                         supplier_part_no, 
                         order["part_description"], 
                         order["supplier"], 
-                        order["location"],
+                        order["primary_location"],
+                        order["backup_location"],
                         order["msds_form"] if order["msds_form"] else 0,
                         order["price"],
                         order["cas_number"], 
@@ -436,25 +439,22 @@ my_admin_site.register(Antibody, AntibodyPage)
 #################################################
 
 from order_management.models import CostUnit
-from order_management.models import Location
 from order_management.models import SupplierOption
 from order_management.models import Order
 from order_management.models import OrderExtraDoc
 from order_management.models import MsdsForm
 
-from order_management.admin import SearchFieldOptLocation, SearchFieldOptCostUnit, SearchFieldOptSupplier, SearchFieldOptPartDescription, OrderQLSchema
+from order_management.admin import SearchFieldOptCostUnit, SearchFieldOptSupplier, SearchFieldOptPartDescription, OrderQLSchema
 from order_management.admin import OrderExtraDocInline
 from order_management.admin import AddOrderExtraDocInline
 from order_management.admin import CostUnitPage
 from order_management.admin import SupplierOptionPage
-from order_management.admin import LocationPage
 from order_management.admin import OrderPage
 from order_management.admin import MsdsFormPage
 from order_management.admin import OrderExtraDocPage
 
 my_admin_site.register(Order, OrderPage)
 my_admin_site.register(CostUnit, CostUnitPage)
-my_admin_site.register(Location, LocationPage)
 my_admin_site.register(SupplierOption, SupplierOptionPage)
 my_admin_site.register(MsdsForm, MsdsFormPage)
 my_admin_site.register(OrderExtraDoc, OrderExtraDocPage)

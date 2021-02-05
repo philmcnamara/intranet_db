@@ -59,28 +59,6 @@ class CostUnit(models.Model):
         super(CostUnit, self).save(force_insert, force_update)
 
 #################################################
-#             ORDER LOCATION MODEL              #
-#################################################
-
-class Location(models.Model):
-    
-    name = models.CharField("name", max_length=255, unique=True, blank=False)
-    status = models.BooleanField("deactivate?", help_text="Check it, if you want to HIDE this location from the 'Add new order' form ", default=False)
-    
-    class Meta:
-        ordering = ["name",]
-
-    def __str__(self):
-        return self.name
-    
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        
-        # Force name to lower case
-        self.name = self.name.lower()
-        
-        super(Location, self).save(force_insert, force_update, using, update_fields)
-
-#################################################
 #             ORDER SUPPLIER MODEL              #
 #################################################
 
@@ -165,7 +143,9 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
     delivery_alert = models.BooleanField("delivery notification?", default=False)
-    location = models.ForeignKey(Location, on_delete=models.PROTECT, null=True, blank=True)
+    primary_location = models.CharField("primary location", help_text="Please update with item's location after it arrives",
+                                         max_length=255, blank=True)
+    backup_location = models.CharField("backup location", max_length=255, blank=True)
     comment =  models.TextField("comments", blank=True)
     order_manager_created_date_time = models.DateTimeField("created in OrderManager", blank=True, null=True)
     delivered_date = models.DateField("delivered", blank=True, default=None, null=True)
@@ -209,7 +189,6 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
         #self.supplier = self.supplier.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.supplier_part_no = self.supplier_part_no.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.part_description = self.part_description.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
-        self.quantity = self.quantity.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.price = self.price.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.cas_number = self.cas_number.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.ghs_pictogram = self.ghs_pictogram.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
