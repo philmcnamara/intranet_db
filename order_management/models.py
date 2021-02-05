@@ -36,29 +36,6 @@ class SaveWithoutHistoricalRecord():
         return ret
 
 #################################################
-#            ORDER COST UNIT MODEL              #
-#################################################
-
-class CostUnit(models.Model):
-    
-    name = models.CharField("Name", max_length=255, unique=True, blank=False)
-    description = models.CharField("Description", max_length=255, unique=True, blank=False)
-    status = models.BooleanField("deactivate?", help_text="Check it, if you want to HIDE this cost unit from the 'Add new order' form", default=False)
-    
-    class Meta:
-        verbose_name = 'cost unit'
-        ordering = ["name",]
-    
-    def __str__(self):
-        return "{} - {}".format(self.name, self.description)
-
-    def save(self, force_insert=False, force_update=False):
-        
-        # Force name to lower case
-        self.name = self.name.lower()
-        super(CostUnit, self).save(force_insert, force_update)
-
-#################################################
 #             ORDER SUPPLIER MODEL              #
 #################################################
 
@@ -139,7 +116,6 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     part_description = models.TextField("part description", blank=False)
     quantity = models.IntegerField("quantity", blank=False)
     price = models.CharField("price", max_length=255, blank=True)
-    cost_unit = models.ForeignKey(CostUnit, on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
     delivery_alert = models.BooleanField("delivery notification?", default=False)

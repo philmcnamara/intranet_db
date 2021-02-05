@@ -55,7 +55,6 @@ import copy
 
 from .models import OrderExtraDoc
 from .models import Order
-from .models import CostUnit
 from .models import MsdsForm
 from .models import SupplierOption
 
@@ -331,7 +330,7 @@ class OrderExportResource(resources.ModelResource):
     class Meta:
         model = Order
         fields = ('id', 'internal_order_no', 'supplier__name', 'supplier_part_no', 'part_description', 'quantity', 
-            'price', 'cost_unit__name', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 
+            'price', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 
             'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
 
@@ -484,20 +483,6 @@ def copy_order(modeladmin, request, queryset):
 #                 ORDER PAGES                   #
 #################################################
 
-class SearchFieldOptCostUnit(StrField):
-    """Create a list of unique cost units for search"""
-
-    model = CostUnit
-    name = 'cost_unit'
-    suggest_options = True
-
-    def get_options(self):
-        return CostUnit.objects.all().order_by('name').\
-        values_list('name', flat=True)
-
-    def get_lookup_name(self):
-        return 'cost_unit__name'
-
 class SearchFieldSupplierOption(StrField):
     """Create a list of unique supplier units for search"""
 
@@ -513,7 +498,7 @@ class SearchFieldSupplierOption(StrField):
         return 'supplier__name'
 
 class SearchFieldOptSupplier(StrField):
-    """Create a list of unique cost units for search"""
+    """Create a list of unique supplier units for search"""
 
     model = Order
     name = 'supplier'
@@ -524,7 +509,7 @@ class SearchFieldOptSupplier(StrField):
         get_options().all().distinct()
 
 class SearchFieldOptPartDescription(StrField):
-    """Create a list of unique cost units for search"""
+    """Create a list of unique part description units for search"""
 
     model = Order
     name = 'part_description'
@@ -535,7 +520,7 @@ class SearchFieldOptPartDescription(StrField):
         get_options().all().distinct()
 
 class SearchFieldOptAzardousPregnancy(StrField):
-    """Create a list of unique cost units for search"""
+    """Create a list of unique Pregnancy hazard units for search"""
 
     model = Order
     name = 'hazard_level_pregnancy'
@@ -554,7 +539,7 @@ class SearchFieldOptLastnameOrder(SearchFieldOptLastname):
 class OrderQLSchema(DjangoQLSchema):
     '''Customize search functionality'''
     
-    include = (Order, User, CostUnit, SupplierOption) # Include only the relevant models to be searched
+    include = (Order, User, SupplierOption) # Include only the relevant models to be searched
 
     suggest_options = {
         Order: ['status', 'supplier', 'urgent'],
@@ -564,7 +549,7 @@ class OrderQLSchema(DjangoQLSchema):
         ''' Define fields that can be searched'''
         
         if model == Order:
-            return ['id', SearchFieldOptSupplier() ,'supplier_part_no', 'internal_order_no', SearchFieldOptPartDescription(), SearchFieldOptCostUnit(), 
+            return ['id', SearchFieldOptSupplier() ,'supplier_part_no', 'internal_order_no', SearchFieldOptPartDescription(),
             'status', 'urgent', "primary_location", "backup_location", 'comment', 'delivered_date', 'cas_number', 
             'ghs_pictogram', SearchFieldOptAzardousPregnancy(), 'created_date_time', 'last_changed_date_time', 'created_by',]
         elif model == User:
@@ -579,7 +564,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
     class Meta:
         model = Order
         fields = ['supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 
+            'price', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 
             'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
     
     def clean__validate(self):
@@ -740,7 +725,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         always_readonly_fields = ['delivered_date', 'status', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
         cloned_readonly_fields = ['supplier', 'supplier_part_no', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
                                   'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
-        restrictive_readonly_fields = ['quantity', 'price', 'cost_unit', 'urgent', 'delivery_alert', 'comment',]
+        restrictive_readonly_fields = ['quantity', 'price', 'urgent', 'delivery_alert', 'comment',]
         if obj:
             # admin-level user
             if (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or
@@ -764,7 +749,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         
         # Specifies which fields should be shown in the add view
         self.fields = ('supplier','supplier_part_no', 'part_description', 'quantity', 
-            'price', 'cost_unit', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
+            'price', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
             'comment', 'url', 'cas_number', 
             'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
         self.raw_id_fields = ['msds_form']
@@ -815,7 +800,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 
 
         self.fields = ('supplier','supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 'status',
-                'price', 'cost_unit', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'comment', 'url', 'cas_number', 
+                'price', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'comment', 'url', 'cas_number', 
                 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
                 'delivered_date', 'created_by')
         return super(OrderPage,self).change_view(request, object_id, extra_context=extra_context)
@@ -954,11 +939,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                     kwargs["queryset"] = User.objects.exclude(id__in=[1, 20, 36]).order_by('last_name')
                 kwargs['initial'] = request.user.id
 
-            # Sort cost_unit, location, and supplier fields by name
+            # Sort supplier fields by name
             
-            if db_field.name == "cost_unit":
-                kwargs["queryset"] = CostUnit.objects.exclude(status=True).order_by('name')
-
             if db_field.name == "supplier":
                 kwargs["queryset"] = SupplierOption.objects.exclude(status=True).order_by('name')
 
@@ -969,7 +951,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 #################################################
 
 class SearchFieldOptMsdsName(StrField):
-    """Create a list of unique cost units for search"""
+    """Create a list of unique MSDS units for search"""
 
     model = MsdsForm
     name = 'name'
@@ -1065,17 +1047,6 @@ class OrderExtraDocPage(DjangoQLSearchMixin, admin.ModelAdmin):
         # Specifies which fields should be shown in the change view
         self.fields = (['name', 'order', 'created_date_time',])
         return super(OrderExtraDocPage,self).change_view(request,object_id)
-
-#################################################
-#           ORDER COST UNIT PAGES               #
-#################################################
-
-class CostUnitPage(admin.ModelAdmin):
-    
-    list_display = ('name', 'description', 'status')
-    list_display_links = ('name',)
-    list_per_page = 25
-    ordering = ['name']
 
 #################################################
 #           ORDER SUPPLIER PAGES                #
