@@ -577,7 +577,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
 
 class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin):
     
-    list_display = ('custom_internal_order_no', 'item_description', 'supplier', 'part_name', 'supplier_part_no', 
+    list_display = ('custom_internal_order_no', 'part_name', 'supplier', 'item_description', 'supplier_part_no', 
                     'quantity', 'trimmed_comment' ,'primary_location', 'msds_link', 'coloured_status', "created_by")
     list_display_links = ('custom_internal_order_no', )
     list_per_page = 25
