@@ -321,7 +321,8 @@ class OrderChemicalExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_description', 'quantity', "primary_location",
+        fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_category',
+        'part_description', 'quantity', "primary_location",
         "cas_number", "backup_location", "ghs_pictogram", 'hazard_level_pregnancy')
 
 class OrderExportResource(resources.ModelResource):
@@ -329,7 +330,7 @@ class OrderExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id', 'internal_order_no', 'supplier__name', 'part_name', 'supplier_part_no', 'part_description', 'quantity', 
+        fields = ('id', 'internal_order_no', 'supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'part_description', 'quantity', 
             'price', 'price_vat', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 
             'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
@@ -549,7 +550,8 @@ class OrderQLSchema(DjangoQLSchema):
         ''' Define fields that can be searched'''
         
         if model == Order:
-            return ['id', SearchFieldOptSupplier(), 'part_name', 'supplier_part_no', 'internal_order_no', SearchFieldOptPartDescription(),
+            return ['id', SearchFieldOptSupplier(), 'part_name', 'supplier_part_no', 'part_category', 
+            'internal_order_no', SearchFieldOptPartDescription(),
             'status', 'urgent', "primary_location", "backup_location", 'comment', 'delivered_date', 'cas_number', 
             'ghs_pictogram', SearchFieldOptAzardousPregnancy(), 'created_date_time', 'last_changed_date_time', 'created_by',]
         elif model == User:
@@ -563,7 +565,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
 
     class Meta:
         model = Order
-        fields = ['supplier', 'part_name', 'supplier_part_no', 'internal_order_no', 'part_description', 'quantity', 
+        fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'quantity', 
             'price','price_vat', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 
             'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
     
@@ -583,7 +585,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
-    search_fields = ['id', 'supplier__name', 'supplier_part_no', 'part_description', 'status', 'comment']
+    search_fields = ['id', 'supplier__name', 'supplier_part_no', 'part_category', 'part_description', 'status', 'comment']
     
     def save_model(self, request, obj, form, change):
         
@@ -723,7 +725,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def get_readonly_fields(self, request, obj=None):
         # Specifies which fields should be shown as read-only and when
         always_readonly_fields = ['delivered_date', 'status', 'price_vat', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
-        cloned_readonly_fields = ['supplier', 'part_name', 'supplier_part_no', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
+        cloned_readonly_fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
                                   'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
         restrictive_readonly_fields = ['quantity', 'price', 'urgent', 'delivery_alert', 'comment',]
         if obj:
@@ -748,7 +750,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def add_view(self, request, extra_context=None):
         
         # Specifies which fields should be shown in the add view
-        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'url', 'part_description', 'quantity', 
+        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'part_description', 'quantity', 
             'price', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
             'comment', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
         self.raw_id_fields = ['msds_form']
@@ -798,7 +800,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 request.user = get_object_or_404(User, pk=request.user.id)
                 
 
-        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'url', 'internal_order_no', 'part_description', 'quantity', 'status',
+        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'internal_order_no', 'part_description', 'quantity', 'status',
                 'price', 'price_vat', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'comment',  'cas_number', 
                 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
                 'delivered_date', 'created_by')

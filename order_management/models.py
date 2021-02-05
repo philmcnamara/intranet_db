@@ -14,6 +14,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from simple_history.models import HistoricalRecords
 import os
 import time
+from decimal import Decimal
 from record_approval.models import RecordToBeApproved
 from django_project.private_settings import LAB_ABBREVIATION_FOR_FILES
 
@@ -107,18 +108,32 @@ HAZARD_LEVEL_PREGNANCY_CHOICES = (('none', 'none'),
 ('yellow', 'yellow'), 
 ('red', 'red'))
 
+ITEM_CATEGORY_CHOICES = (
+('Animal Care', 'Animal Care'),
+('Antibodies', 'Antibodies'),
+('Cells', 'Cells'),
+('Chemicals', 'Chemicals'),
+('Consumables', 'Consumables'),
+('Furniture', 'Furniture'),
+('Glassware', 'Glassware'),
+('IT', 'IT'),
+('Lab Equipment', 'Lab Equipment'),
+('Office Supplies', 'Office Supplies'),
+('Radioactivity', 'Radioactivity')
+)
+
 class Order(models.Model, SaveWithoutHistoricalRecord):
     
-    # supplier = models.CharField("supplier", max_length=255, blank=False)
     supplier = models.ForeignKey(SupplierOption, on_delete=models.PROTECT, null=True, blank=False)
     part_name = models.CharField("part name", max_length=255, null=True, blank=False)
     supplier_part_no = models.CharField("supplier Part-No", max_length=255, blank=False)
+    part_category = models.CharField("Item Category", max_length=255, choices=ITEM_CATEGORY_CHOICES, blank=False, null=True)
     url = models.URLField("URL", max_length=400, blank=True)
     internal_order_no = models.CharField("internal order number", max_length=255, blank=True)
     part_description = models.TextField("part description", help_text="Please include units that correspond to the quantity", blank=False)
     quantity = models.IntegerField("quantity", blank=False)
-    price = models.FloatField("price (VAT-exclusive)", null=True, blank=True)
-    price_vat = models.FloatField("price (VAT-inclusive)", null=True, blank=True)
+    price = models.DecimalField("price (VAT-exclusive)", null=True, decimal_places=2, max_digits=10, blank=True)
+    price_vat = models.DecimalField("price (VAT-inclusive)", null=True, decimal_places=2, max_digits=10, blank=True)
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
     delivery_alert = models.BooleanField("delivery notification?", default=False)
@@ -169,7 +184,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
         self.supplier_part_no = self.supplier_part_no.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.part_description = self.part_description.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         if self.price:
-            self.price_vat = self.price * 1.19
+            self.price_vat = self.price * Decimal(1.19)
         self.cas_number = self.cas_number.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.ghs_pictogram = self.ghs_pictogram.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         
