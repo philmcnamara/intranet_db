@@ -111,11 +111,14 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     
     # supplier = models.CharField("supplier", max_length=255, blank=False)
     supplier = models.ForeignKey(SupplierOption, on_delete=models.PROTECT, null=True, blank=False)
+    part_name = models.CharField("part name", max_length=255, null=True, blank=False)
     supplier_part_no = models.CharField("supplier Part-No", max_length=255, blank=False)
+    url = models.URLField("URL", max_length=400, blank=True)
     internal_order_no = models.CharField("internal order number", max_length=255, blank=True)
-    part_description = models.TextField("part description", blank=False)
+    part_description = models.TextField("part description", help_text="Please include units that correspond to the quantity", blank=False)
     quantity = models.IntegerField("quantity", blank=False)
-    price = models.CharField("price", max_length=255, blank=True)
+    price = models.FloatField("price (VAT-exclusive)", null=True, blank=True)
+    price_vat = models.FloatField("price (VAT-inclusive)", null=True, blank=True)
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
     delivery_alert = models.BooleanField("delivery notification?", default=False)
@@ -125,7 +128,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     comment =  models.TextField("comments", blank=True)
     order_manager_created_date_time = models.DateTimeField("created in OrderManager", blank=True, null=True)
     delivered_date = models.DateField("delivered", blank=True, default=None, null=True)
-    url = models.URLField("URL", max_length=400, blank=True)
+    
     cas_number = models.CharField("CAS number", max_length=255, blank=True)
     ghs_pictogram = models.CharField("GHS pictogram", max_length=255, blank=True)
     msds_form = models.ForeignKey(MsdsForm, on_delete=models.PROTECT, blank=True, null=True)
@@ -165,7 +168,8 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
         #self.supplier = self.supplier.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.supplier_part_no = self.supplier_part_no.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.part_description = self.part_description.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
-        self.price = self.price.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
+        if self.price:
+            self.price_vat = self.price * 1.19
         self.cas_number = self.cas_number.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.ghs_pictogram = self.ghs_pictogram.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         
