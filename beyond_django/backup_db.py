@@ -1,7 +1,7 @@
 from os.path import join, dirname, isfile
 from os import remove, listdir
 from subprocess import check_output
-from datetime import datetime
+from datetime import datetime, date
 import pathlib
 
 from collection_management.models import SaCerevisiaeStrain
@@ -87,6 +87,15 @@ pathlib.Path(join(BACKUP_DIR, 'uploads')).mkdir(parents=True, exist_ok=True)
 
 # Remove all and .gz files older than 7 days from backup folder 
 #check_output("/usr/bin/find {BACKUP_DIR}/db_dumps/ -maxdepth 1 -type f -mtime +7 -iname '*.gz' -delete".format(BACKUP_DIR=BACKUP_DIR), shell=True)
+
+# delete all files older than 28 days, keep one a week from Sunday morning
+dump_dir = pathlib.Path(join(BACKUP_DIR, 'db_dumps'))
+files = os.listdir(dump_dir)
+now = date.today()
+for i in files:
+    filedate = date(int(i[:4]), int(i[4:6]), int(i[6:8]))
+    if (now - filedate).days > 28 and (filedate.weekday() != 6 or "0015" not in i):
+        os.remove(pathlib.Path(join(dump_dir, i)))
 
 # Create datadump for django database and gzip it
 CURRENT_DATE_TIME = datetime.now().strftime("%Y%m%d_%H%M")
