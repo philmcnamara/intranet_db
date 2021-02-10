@@ -151,6 +151,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     approval_email = models.BooleanField(default=False, null=True)
     delivery_email = models.BooleanField(default=False, null=True)
     cloned = models.BooleanField(default=False, null=True)
+    template = models.BooleanField("Template Order", default=False, null=False)
 
     created_date_time = models.DateTimeField("created", auto_now_add=True, null=True)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True, null=True)
