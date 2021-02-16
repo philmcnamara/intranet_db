@@ -19,6 +19,7 @@ from django import forms
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
 from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
+from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
 
 #################################################
 #        ADDED FUNCTIONALITIES IMPORTS          #
@@ -415,7 +416,35 @@ def change_order_status_to_approved(modeladmin, request, queryset):
     else:
         for order in queryset.filter(status = "submitted"):
             order.status = 'approved'
+            
+            # notify order manager for urgent orders to be placed right away
+            if order.urgent == True and order.urgent_email == False:
+                message = """Dear Order Manager,
+
+                {} {}'s urgent order for {} has been approved. Please place the order at your earliest convenience.
+
+                Best,
+
+                Site Admin
+
+                """.format(request.user.first_name, request.user.last_name, order.part_name)
+
+                message = inspect.cleandoc(message)
+                
+                try:
+                    send_mail('New urgent order approved', 
+                    message, 
+                    SERVER_EMAIL_ADDRESS,
+                    ORDER_MANAGER_EMAIL_ADDRESSES,
+                    fail_silently=False)
+                    messages.success(request, 'The order manager has been notified that an urgent order has been approved')
+                    order.urgent_email=True
+                    order.save()
+                except:
+                    pass
+            
             order.save()
+
 change_order_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
 
 def export_chemicals(modeladmin, request, queryset):
@@ -478,6 +507,8 @@ def copy_order(modeladmin, request, queryset):
         clone.approval_email=False
         clone.cloned=True
         clone.template=False
+        clone.urgent_email=False
+        clone.urgent=False
         clone.save()
     copy_order.short_description = "Copy selected orders"
 
@@ -590,10 +621,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     
     def save_model(self, request, obj, form, change):
         
+        # New orders
         if obj.pk == None:
-
-            # New orders
-
             # If an order is new, assign the request user to it only if the order's created_by
             # attribute is not null
 
@@ -620,16 +649,11 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             if not request.user.labuser.is_principal_investigator:
                 obj.approval.create(activity_type='created', activity_user=obj.history.latest().created_by)
                 Order.objects.filter(id=obj.pk).update(created_approval_by_pi=True)
-
+        
+        # Existing orders
         else:
-            
-            # Existing orders
-            
-            # Users can edit their own orders before they are approved, but after approval only lab managers or order managers can edit them
-            # if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-            #     raise PermissionDenied
-            
-            # else:
+            # Users can edit their own orders before they are approved
+            # after approval only lab managers or order managers can edit them
             order = Order.objects.get(pk=obj.pk)
             
             # If the status of an order changes to the following
@@ -684,6 +708,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 obj_history = obj.history.all()
                 obj_history.delete()
     
+        # Notify order approval manager of new orders
         if obj.status == "submitted" and obj.approval_email == False:
 
             message = """Dear Order Approval Manager,
@@ -702,13 +727,14 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 send_mail('New order placed', 
                 message, 
                 SERVER_EMAIL_ADDRESS,
-                ORDER_APPROVAL_EMAIL_ADDRESSES,
+                ORDER_MANAGER_EMAIL_ADDRESSES,
                 fail_silently=False,)
                 messages.success(request, 'The order approval manager has been notified of your request')
                 obj.approval_email=True
                 obj.save()
             except:
                 messages.warning(request, 'Your order was added to the order list. However, the approval request email failed to send.')
+
 
     def get_queryset(self, request):
         

@@ -150,6 +150,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     hazard_level_pregnancy = models.CharField("Hazard level for pregnancy", max_length=255, choices=HAZARD_LEVEL_PREGNANCY_CHOICES, default='none', blank=True)
     approval_email = models.BooleanField(default=False, null=True)
     delivery_email = models.BooleanField(default=False, null=True)
+    urgent_email = models.BooleanField(default=False, null=True)
     cloned = models.BooleanField(default=False, null=True)
     template = models.BooleanField("Template Order", default=False, null=False)
 

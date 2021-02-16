@@ -13,6 +13,8 @@ from .models import RecordToBeApproved
 from django.contrib.contenttypes.models import ContentType
 
 from django_project.private_settings import SITE_TITLE
+from django_project.private_settings import SERVER_EMAIL_ADDRESS
+from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
 
 from django.utils import timezone
 
@@ -64,9 +66,34 @@ def approve_records(modeladmin, request, queryset):
     #Orders
     order_approval_records = queryset.filter(content_type__app_label='order_management')
     if order_approval_records:
-        if request.user.labuser.is_principal_investigator:
+        if  request.user.groups.filter(name='Approval manager').exists():
             model = order_approval_records[0].content_object._meta.model
             order_ids = order_approval_records.values_list('object_id', flat=True)
+            for order in model.objects.filter(id__in=order_ids):
+                if order.urgent == True and order.urgent_email == False:
+                    message = """Dear Order Manager,
+
+                    {} {}'s urgent order for {} has been approved. Please place the order at your earliest convenience.
+
+                    Best,
+
+                    Site Admin
+
+                    """.format(request.user.first_name, request.user.last_name, order.part_name)
+
+                    message = inspect.cleandoc(message)
+                    
+                    try:
+                        send_mail('New urgent order approved', 
+                        message, 
+                        SERVER_EMAIL_ADDRESS,
+                        ORDER_MANAGER_EMAIL_ADDRESSES,
+                        fail_silently=False)
+                        messages.success(request, 'The order manager has been notified that an urgent order has been approved')
+                        order.urgent_email=True
+                        order.save()
+                    except:
+                        print("email failed to send")
             model.objects.filter(id__in=order_ids).update(status="approved")
             order_approval_records.delete()
             success_message = True
