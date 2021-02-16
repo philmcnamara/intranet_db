@@ -324,7 +324,7 @@ class OrderChemicalExportResource(resources.ModelResource):
         model = Order
         fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_category',
         'part_description', 'quantity', "primary_location", "backup_location",
-        "cas_number", 'template', "ghs_pictogram", 'hazard_level_pregnancy')
+        "cas_number", 'reorderable', "ghs_pictogram", 'hazard_level_pregnancy')
 
 class OrderExportResource(resources.ModelResource):
     """Defines a custom export resource class for orders"""
@@ -332,7 +332,7 @@ class OrderExportResource(resources.ModelResource):
     class Meta:
         model = Order
         fields = ('id', 'internal_order_no', 'supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'part_description', 'quantity', 
-            'price', 'price_vat', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 'template',
+            'price', 'price_vat', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 'reorderable',
             'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
 
@@ -498,18 +498,20 @@ export_orders.short_description = "Export selected orders"
 def copy_order(modeladmin, request, queryset):
     '''creates a copy of an order, which can be used as a template for a reorder'''
     for order in queryset:
-        clone = copy.copy(order)
-        clone.id = None
-        clone.created_by = request.user
-        clone.status = "unsubmitted"
-        clone.save()
-        clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
-        clone.approval_email=False
-        clone.cloned=True
-        clone.template=False
-        clone.urgent_email=False
-        clone.urgent=False
-        clone.save()
+        if order.reorderable:
+            clone = copy.copy(order)
+            clone.id = None
+            clone.created_by = request.user
+            clone.status = "unsubmitted"
+            clone.save()
+            clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
+            clone.approval_email=False
+            clone.cloned=True
+            clone.urgent_email=False
+            clone.urgent=False
+            clone.save()
+        else:
+            messages.warning(request, 'This order is not reorderable, see comment for alternative')
     copy_order.short_description = "Copy selected orders"
 
 #################################################
@@ -584,7 +586,7 @@ class OrderQLSchema(DjangoQLSchema):
         if model == Order:
             return ['id', SearchFieldOptSupplier(), 'part_name', 'supplier_part_no', 'part_category', 
             'internal_order_no', SearchFieldOptPartDescription(),
-            'status', 'urgent', "primary_location", "backup_location", 'comment', 'delivered_date', 'cas_number', 'template',
+            'status', 'urgent', "primary_location", "backup_location", 'comment', 'delivered_date', 'cas_number', 'reorderable',
             'ghs_pictogram', SearchFieldOptAzardousPregnancy(), 'created_date_time', 'last_changed_date_time', 'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOrder(), SearchFieldOptLastnameOrder()]
@@ -598,7 +600,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
     class Meta:
         model = Order
         fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'quantity', 
-            'price','price_vat', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 'template',
+            'price','price_vat', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 'reorderable',
             'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
     
     def clean__validate(self):
@@ -610,7 +612,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
 class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin):
     
     list_display = ('custom_internal_order_no', 'part_name', 'supplier', 'item_description', 'supplier_part_no', 
-                    'quantity', 'trimmed_comment' ,'primary_location', 'template', 'coloured_status', "created_by")
+                    'quantity', 'trimmed_comment' ,'primary_location', 'reorderable', 'coloured_status', "created_by")
     list_display_links = ('custom_internal_order_no', )
     list_per_page = 25
     inlines = [OrderExtraDocInline, AddOrderExtraDocInline]
@@ -751,9 +753,9 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
     def get_readonly_fields(self, request, obj=None):
         # Specifies which fields should be shown as read-only and when
-        always_readonly_fields = ['delivered_date', 'status', 'price_vat', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by', 'template']
+        always_readonly_fields = ['delivered_date', 'status', 'price_vat', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
         cloned_readonly_fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
-                                  'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
+                                  'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'reorderable']
         never_readonly_fields = ['quantity', 'price', 'urgent', 'delivery_alert', 'comment']
         if obj:
             # admin-level user
@@ -828,7 +830,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 
 
         self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'internal_order_no', 'part_description', 'quantity', 'status',
-                'price', 'price_vat', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'comment',  'cas_number', 'template',
+                'price', 'price_vat', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'reorderable', 'comment', 'cas_number', 
                 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
                 'delivered_date', 'created_by')
 

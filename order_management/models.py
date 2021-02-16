@@ -114,6 +114,7 @@ ITEM_CATEGORY_CHOICES = (
 ('Cells', 'Cells'),
 ('Chemicals', 'Chemicals'),
 ('Consumables', 'Consumables'),
+('Enzymes', 'Enzymes'),
 ('Furniture', 'Furniture'),
 ('Glassware', 'Glassware'),
 ('IT', 'IT'),
@@ -127,7 +128,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     supplier = models.ForeignKey(SupplierOption, on_delete=models.PROTECT, null=True, blank=False)
     part_name = models.CharField("part name", max_length=255, null=True, blank=False)
     supplier_part_no = models.CharField("supplier Part-No", max_length=255, blank=False)
-    part_category = models.CharField("Item Category", max_length=255, choices=ITEM_CATEGORY_CHOICES, blank=False, null=True)
+    part_category = models.CharField("Item Category", max_length=255, choices=ITEM_CATEGORY_CHOICES, blank=False, null=False)
     url = models.URLField("URL", max_length=400, blank=True)
     internal_order_no = models.CharField("internal order number", max_length=255, blank=True)
     part_description = models.TextField("part description", help_text="Please include units that correspond to the quantity", blank=False)
@@ -152,7 +153,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     delivery_email = models.BooleanField(default=False, null=True)
     urgent_email = models.BooleanField(default=False, null=True)
     cloned = models.BooleanField(default=False, null=True)
-    template = models.BooleanField("Template Order", default=False, null=False)
+    reorderable = models.BooleanField("Reorderable", default=True, null=False)
 
     created_date_time = models.DateTimeField("created", auto_now_add=True, null=True)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True, null=True)
