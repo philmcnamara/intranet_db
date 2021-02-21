@@ -25,4 +25,4 @@ You can find them here: https://{}:/order_management/order/?q-l=on&q=status+%3D+
     )
 
 except:
-    print("failed to send email")
+    pass
