@@ -50,6 +50,9 @@ import xlrd
 import csv
 import copy
 
+# Modify approval records
+from record_approval.models import RecordToBeApproved
+
 #################################################
 #                OTHER IMPORTS                  #
 #################################################
@@ -416,7 +419,8 @@ def change_order_status_to_approved(modeladmin, request, queryset):
     else:
         for order in queryset.filter(status = "submitted"):
             order.status = 'approved'
-            
+            record = RecordToBeApproved.objects.all().get(object_id=order.id)
+            record.delete()
             # notify order manager for urgent orders to be placed right away
             if order.urgent == True and order.urgent_email == False:
                 message = """Dear Order Manager,
