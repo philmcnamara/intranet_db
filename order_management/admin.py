@@ -619,7 +619,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
-    search_fields = ['id', 'supplier__name', 'supplier_part_no', 'part_category', 'part_description', 'status', 'comment']
+    search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'part_description', 'status', 'comment']
     
     def save_model(self, request, obj, form, change):
         
