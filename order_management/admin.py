@@ -733,7 +733,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 send_mail('New order placed', 
                 message, 
                 SERVER_EMAIL_ADDRESS,
-                ORDER_MANAGER_EMAIL_ADDRESSES,
+                ORDER_APPROVAL_EMAIL_ADDRESSES,
                 fail_silently=False,)
                 messages.success(request, 'The order approval manager has been notified of your request')
                 obj.approval_email=True
