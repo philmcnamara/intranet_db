@@ -149,23 +149,23 @@ def notify_user_edits_required(modeladmin, request, queryset):
         return HttpResponseRedirect(".")
 notify_user_edits_required.short_description = "Notify users of required edits"
 
-def approve_all_new_orders(modeladmin, request, queryset):
-    """Approve all new orders """
+# def approve_all_new_orders(modeladmin, request, queryset):
+#     """Approve all new orders """
 
-    if request.user.labuser.is_principal_investigator:
-        orders = Order.objects.filter(created_approval_by_pi=False)
-        if orders.exists():
-            orders.update(created_approval_by_pi=True)
-            RecordToBeApproved.objects.filter(content_type__app_label='order_management').delete()
-            messages.success(request, 'New orders have been approved')
-        else:
-            messages.warning(request, 'No new orders to approve')
-    else:
-        messages.error(request, 'You are not allowed to approve orders')
+#     if request.user.labuser.is_principal_investigator:
+#         orders = Order.objects.filter(created_approval_by_pi=False)
+#         if orders.exists():
+#             orders.update(created_approval_by_pi=True)
+#             RecordToBeApproved.objects.filter(content_type__app_label='order_management').delete()
+#             messages.success(request, 'New orders have been approved')
+#         else:
+#             messages.warning(request, 'No new orders to approve')
+#     else:
+#         messages.error(request, 'You are not allowed to approve orders')
 
-    return HttpResponseRedirect(".")
+#     return HttpResponseRedirect(".")
 
-approve_all_new_orders.short_description = "Approve all new orders"
+# approve_all_new_orders.short_description = "Approve all new orders"
 
 class ContentTypeFilter(admin.SimpleListFilter):
 
@@ -203,7 +203,7 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
     list_display_links = ('id', )
     list_per_page = 50
     ordering = ['content_type', '-activity_type', 'object_id']
-    actions = [approve_records, notify_user_edits_required, approve_all_new_orders]
+    actions = [approve_records, notify_user_edits_required]
     list_filter = (ContentTypeFilter, 'activity_type', )
     
     def get_readonly_fields(self, request, obj=None):
@@ -216,17 +216,17 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
         else:
             return ['created_date_time',]
 
-    def changelist_view(self, request, extra_context=None):
+    # def changelist_view(self, request, extra_context=None):
         
         # Set queryset of action approve_all_new_orders
 
-        if 'action' in request.POST and request.POST['action'] == 'approve_all_new_orders':
-            if not request.POST.getlist(admin.ACTION_CHECKBOX_NAME):
-                post = request.POST.copy()
-                for u in Order.objects.all():
-                    post.update({admin.ACTION_CHECKBOX_NAME: str(u.id)})
-                request._set_post(post)
-        return super(RecordToBeApprovedPage, self).changelist_view(request, extra_context=extra_context)
+        # if 'action' in request.POST and request.POST['action'] == 'approve_all_new_orders':
+        #     if not request.POST.getlist(admin.ACTION_CHECKBOX_NAME):
+        #         post = request.POST.copy()
+        #         for u in Order.objects.all():
+        #             post.update({admin.ACTION_CHECKBOX_NAME: str(u.id)})
+        #         request._set_post(post)
+        # return super(RecordToBeApprovedPage, self).changelist_view(request, extra_context=extra_context)
 
     def get_queryset(self, request):
         
