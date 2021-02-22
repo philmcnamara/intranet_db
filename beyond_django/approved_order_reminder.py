@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
-from django_project.private_settings import ORDERING_EMAIL_ADDRESS
+from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
 from django_project.private_settings import ALLOWED_HOSTS
 from django.urls import reverse
 
@@ -21,7 +21,7 @@ You can find them here: https://{}:/order_management/order/?q-l=on&q=status+%3D+
         subject="Approved orders are pending",
         message=email_text,
         from_email=SERVER_EMAIL_ADDRESS,
-        recipient_list=ORDERING_EMAIL_ADDRESS
+        recipient_list=ORDER_MANAGER_EMAIL_ADDRESSES
     )
 
 except:
