@@ -144,7 +144,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     comment =  models.TextField("comments", blank=True)
     order_manager_created_date_time = models.DateTimeField("created in OrderManager", blank=True, null=True)
     delivered_date = models.DateField("delivered", blank=True, default=None, null=True)
-    
+    supplier_order_number = models.CharField("Supplier Order Number", max_length=255, blank=True, null=True)
     cas_number = models.CharField("CAS number", max_length=255, blank=True)
     ghs_pictogram = models.CharField("GHS pictogram", max_length=255, blank=True)
     msds_form = models.ForeignKey(MsdsForm, on_delete=models.PROTECT, blank=True, null=True)

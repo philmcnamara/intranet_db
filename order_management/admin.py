@@ -325,7 +325,7 @@ class OrderChemicalExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_category',
+        fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'supplier_order_number',
         'part_description', 'quantity', "primary_location", "backup_location",
         "cas_number", 'reorderable', "ghs_pictogram", 'hazard_level_pregnancy')
 
@@ -334,7 +334,7 @@ class OrderExportResource(resources.ModelResource):
     
     class Meta:
         model = Order
-        fields = ('id', 'internal_order_no', 'supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'part_description', 'quantity', 
+        fields = ('id', 'internal_order_no', 'supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'supplier_order_number', 'part_description', 'quantity', 
             'price', 'price_vat', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 'reorderable',
             'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
@@ -603,9 +603,9 @@ class MyMassUpdateOrderForm(MassUpdateForm):
 
     class Meta:
         model = Order
-        fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'quantity', 
-            'price','price_vat', 'primary_location', "backup_location", 'comment', 'url', 'cas_number', 'reorderable',
-            'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
+        fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'supplier_order_number', 
+                  'part_description', 'quantity', 'price','price_vat', 'primary_location', "backup_location", 'comment', 'url', 
+                  'cas_number', 'reorderable', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
     
     def clean__validate(self):
         return True
@@ -623,7 +623,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
-    search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'part_description', 'status', 'comment']
+    search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'supplier_order_number',
+                     'part_description', 'status', 'comment']
     
     def save_model(self, request, obj, form, change):
         
@@ -760,7 +761,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         always_readonly_fields = ['delivered_date', 'status', 'price_vat', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
         cloned_readonly_fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
                                   'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'reorderable']
-        never_readonly_fields = ['quantity', 'price', 'urgent', 'delivery_alert', 'comment']
+        never_readonly_fields = ['quantity', 'price', 'urgent', 'supplier_order_number', 'delivery_alert', 'comment']
         if obj:
             # admin-level user
             if (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or
@@ -783,9 +784,9 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def add_view(self, request, extra_context=None):
         
         # Specifies which fields should be shown in the add view
-        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'part_description', 'quantity', 
-            'price', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
-            'comment', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
+        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'supplier_order_number',
+                       'part_description', 'quantity', 'price', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
+                       'comment', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
         self.raw_id_fields = ['msds_form']
         self.autocomplete_fields = []
         return super(OrderPage,self).add_view(request, extra_context=extra_context)
@@ -833,10 +834,10 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 request.user = get_object_or_404(User, pk=request.user.id)
                 
 
-        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'internal_order_no', 'part_description', 'quantity', 'status',
-                'price', 'price_vat', 'urgent', 'delivery_alert', 'primary_location', 'backup_location', 'reorderable', 'comment', 'cas_number', 
-                'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
-                'delivered_date', 'created_by')
+        self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'internal_order_no', 'supplier_order_number',
+                       'part_description', 'quantity', 'status', 'price', 'price_vat', 'urgent', 'delivery_alert', 'primary_location', 
+                       'backup_location', 'reorderable', 'comment', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 
+                       'created_date_time', 'order_manager_created_date_time', 'delivered_date', 'created_by')
 
         return super(OrderPage,self).change_view(request, object_id, extra_context=extra_context)
     
