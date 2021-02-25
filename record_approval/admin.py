@@ -251,7 +251,7 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
         '''Custom link to a record field for changelist_view'''
 
         url = reverse("admin:{}_{}_change".format(instance.content_object._meta.app_label, instance.content_object._meta.model_name), args=(instance.content_object.id,))
-        record_name = str(instance.content_object)
+        record_name = str(instance.content_object.part_name)
         record_name =  record_name[:50] + "..." if len(record_name) > 50 else record_name 
        
         return mark_safe('<a href="{}" target="_blank">{}</a>'.format(url, record_name))
