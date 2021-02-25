@@ -166,7 +166,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
         verbose_name = 'order'
     
     def __str__(self):
-         return "{} - {}".format(self.id, self.part_description)
+         return "{} - {}".format(self.id, self.part_name)
     
     def save_without_historical_record(self, *args, **kwargs):
         """Allows inheritance of a method to save an object without

@@ -209,7 +209,6 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         
         # Specifies which fields should be shown as read-only and when
-        
         if obj:
             return ['content_type', 'object_id', 'content_object', 'activity_type', 'activity_user',
                     'message_date_time', 'edited', 'created_date_time',]
