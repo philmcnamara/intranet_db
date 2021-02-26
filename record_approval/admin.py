@@ -112,7 +112,7 @@ approve_records.short_description = "Approve records"
 def notify_user_edits_required(modeladmin, request, queryset):
     """Notify a user that a collection record must be edited"""
 
-    queryset = queryset.filter(content_type__app_label='collection_management')
+    # queryset = queryset.filter(content_type__app_label='collection_management')
 
     if queryset.filter(message=''):
         messages.error(request, 'Some of the records you have selected do not have a message. Please add a message to them, and try again')
@@ -131,17 +131,13 @@ def notify_user_edits_required(modeladmin, request, queryset):
             message = """Dear {},
 
             {} has flagged some of your records to be amended. See below.
-
-            {}
-            Regards,
-            The {}
             """
             
             message = inspect.cleandoc(message).format(user.first_name, request.user, records_str, SITE_TITLE)
 
             send_mail('Some records that you have created/changed need your attention', 
                     message, 
-                    'system@imbc2.imb.uni-mainz.de',
+                    SERVER_EMAIL_ADDRESS,
                     [user.email],
                     fail_silently=False,)
         messages.success(request, 'Users have been notified of required edits')
@@ -250,7 +246,7 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
         '''Custom link to a record field for changelist_view'''
 
         url = reverse("admin:{}_{}_change".format(instance.content_object._meta.app_label, instance.content_object._meta.model_name), args=(instance.content_object.id,))
-        record_name = str(instance.content_object.part_name)
+        record_name = str(instance.content_object)
         record_name =  record_name[:50] + "..." if len(record_name) > 50 else record_name 
        
         return mark_safe('<a href="{}" target="_blank">{}</a>'.format(url, record_name))
