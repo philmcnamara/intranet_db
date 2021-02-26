@@ -132,7 +132,7 @@ def mass_update(modeladmin, request, queryset):
     opts = modeladmin.model._meta
     perm = "{0}.{1}".format(opts.app_label, get_permission_codename('adminactions_massupdate', opts))
     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-        messages.error(request, _('Nice try, you are not allowed to do that.'))
+        messages.error(request, _('Sorry, your account does not have that permission.'))
         return
 
     try:
@@ -348,7 +348,7 @@ def change_order_status_to_arranged(modeladmin, request, queryset):
     
     # Only Lab or Order Manager can use this action
     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-        messages.error(request, 'Nice try, you are not allowed to do that.')
+        messages.error(request, 'Sorry, your account does not have that permission.')
         return
     else:
         for order in queryset.filter(status = "approved"):
@@ -360,9 +360,9 @@ change_order_status_to_arranged.acts_on_all = True
 def change_order_status_to_delivered(modeladmin, request, queryset):
     """Change the status of selected orders from approved to delivered"""
     
-    # Only Lab or Order Manager can use this action
-    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-        messages.error(request, 'Nice try, you are not allowed to do that.')
+    # Only Lab Manager, Order Manager, or Order Receiver can use this action
+    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or request.user.groups.filter(name="Order receiver")):
+        messages.error(request, 'Sorry, your account does not have that permission.')
         return
     else:
         for order in queryset.filter(status = "arranged"):
@@ -401,7 +401,7 @@ change_order_status_to_delivered.short_description = "Change STATUS of selected 
     
 #     # Only Lab or Order Manager can use this action
 #     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-#         messages.error(request, 'Nice try, you are not allowed to do that.')
+#         messages.error(request, 'Sorry, your account does not have that permission.')
 #         return
 #     else:
 #         for order in queryset.filter(status = "delivered"):
@@ -414,7 +414,7 @@ def change_order_status_to_approved(modeladmin, request, queryset):
     
     # Only PI or designated staff can use this action
     if not (request.user.groups.filter(name='Approval Manager').exists()):
-        messages.error(request, 'Nice try, you are not allowed to do that.')
+        messages.error(request, 'Sorry, your account does not have that permission.')
         return
     else:
         for order in queryset.filter(status = "submitted"):
@@ -767,14 +767,30 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             if (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or
                 request.user.groups.filter(name='Approval manager').exists()):
                 return always_readonly_fields
+
             # non-admin user that can edit the order
             elif self.can_change:
-                # order from scratch, all fields can be set
-                if obj.cloned == False:
-                    return always_readonly_fields
-                # cloned order, only certain fields editable
+                # order is being marked for delivery
+                if (obj.status == "arranged" or obj.status == "delivered") and request.user.groups.filter(name="Order receiver"):
+                    # all fields are read-only EXCEPT primary/backup location
+                    all_fields = always_readonly_fields + cloned_readonly_fields + never_readonly_fields
+                    all_fields.remove("primary_location")
+                    all_fields.remove("backup_location")
+                    return all_fields
+
+                # new order being created
+                elif obj.created_by == request.user and (obj.status == "submitted" or obj.status == "unsubmitted"):
+                    # all fields can be set
+                    if obj.cloned == False:
+                        return always_readonly_fields
+                    # cloned order, only certain fields editable
+                    else:
+                        return always_readonly_fields + cloned_readonly_fields
+
+                # order receiver viewing a different order
                 else:
-                    return always_readonly_fields + cloned_readonly_fields
+                    return always_readonly_fields + cloned_readonly_fields + never_readonly_fields
+
             # can't edit, return all fields as read-only
             else:
                 return always_readonly_fields + cloned_readonly_fields + never_readonly_fields
@@ -806,7 +822,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             # Regular users can only edit their own orders before they are approved
             # Lab managers and order managers can edit all orders
             if (order.created_by == request.user and (order.status == "submitted" or order.status == "unsubmitted") or 
-                request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+                request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or
+                request.user.groups.filter(name="Order receiver")):
                 self.can_change = True
 
                 # add delete permission and refresh user permissions cache
