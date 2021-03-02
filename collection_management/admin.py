@@ -738,14 +738,14 @@ class SaCerevisiaeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin,
             
             # Check if the disapprove button was clicked. If so, and no approval
             # record for the object exists, create one
-            if "_disapprove_record" in request.POST:
-                if not obj.approval.all().exists():
-                    original_last_changed_date_time = obj.last_changed_date_time
-                    obj.approval.create(activity_type='changed', activity_user=obj.created_by)
-                    obj.last_changed_approval_by_pi = False
-                    obj.save_without_historical_record()
-                    SaCerevisiaeStrain.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
-                return
+            # if "_disapprove_record" in request.POST:
+            #     if not obj.approval.all().exists():
+            #         original_last_changed_date_time = obj.last_changed_date_time
+            #         obj.approval.create(activity_type='changed', activity_user=obj.created_by)
+            #         obj.last_changed_approval_by_pi = False
+            #         obj.save_without_historical_record()
+            #         SaCerevisiaeStrain.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
+            #     return
             
             # Check if the request's user can change the object, if not raise PermissionDenied
             if self.can_change:
@@ -919,7 +919,7 @@ class SaCerevisiaeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin,
                     'show_save': False,
                     'show_obj_permission': False})
 
-            extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
+            #extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
             extra_context['show_formz'] = True
 
         if '_saveasnew' in request.POST:
@@ -1000,12 +1000,12 @@ class SaCerevisiaeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin,
 
         # If the disapprove button was clicked, redirect to the approval record change
         # page
-        if "_disapprove_record" in request.POST:
-            msg = format_html(
-                _('The {name} "{obj}" was disapproved.'),
-                **msg_dict)
-            self.message_user(request, msg, messages.SUCCESS)
-            return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
+        # if "_disapprove_record" in request.POST:
+        #     msg = format_html(
+        #         _('The {name} "{obj}" was disapproved.'),
+        #         **msg_dict)
+        #     self.message_user(request, msg, messages.SUCCESS)
+        #     return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
         
         return super(SaCerevisiaeStrainPage,self).response_change(request,obj)
 
@@ -1193,15 +1193,15 @@ class PlasmidPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGuar
 
             # Check if the disapprove button was clicked. If so, and no approval
             # record for the object exists, create one
-            if "_disapprove_record" in request.POST:
-                if not obj.approval.all():
-                    original_last_changed_date_time = obj.last_changed_date_time
-                    obj.approval.create(activity_type='changed', activity_user=obj.created_by)
-                    obj.last_changed_approval_by_pi = False
-                    obj.approval_user = None
-                    obj.save_without_historical_record()
-                    Plasmid.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
-                return
+            # if "_disapprove_record" in request.POST:
+            #     if not obj.approval.all():
+            #         original_last_changed_date_time = obj.last_changed_date_time
+            #         obj.approval.create(activity_type='changed', activity_user=obj.created_by)
+            #         obj.last_changed_approval_by_pi = False
+            #         obj.approval_user = None
+            #         obj.save_without_historical_record()
+            #         Plasmid.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
+            #     return
 
             # Approve right away if the request's user is the principal investigator. If not,
             # create an approval record
@@ -1514,13 +1514,13 @@ class PlasmidPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGuar
             'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
         }
 
-        if "_disapprove_record" in request.POST:
-            msg = format_html(
-                _('The {name} "{obj}" was disapproved.'),
-                **msg_dict
-            )
-            self.message_user(request, msg, messages.SUCCESS)
-            return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
+        # if "_disapprove_record" in request.POST:
+        #     msg = format_html(
+        #         _('The {name} "{obj}" was disapproved.'),
+        #         **msg_dict
+        #     )
+        #     self.message_user(request, msg, messages.SUCCESS)
+        #     return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
 
         if "_continue" in request.POST or self.redirect_to_obj_page: # Check if obj has unidentified FormZ Elements:
             msg = format_html(
@@ -1656,7 +1656,7 @@ class PlasmidPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGuar
                                  'show_obj_permission': False,
                                  'show_redetect_save': False})
             
-            extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
+            #extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
             extra_context['show_formz'] = True
 
         fieldsets_with_keep = (
@@ -1910,9 +1910,8 @@ class OligoQLSchema(DjangoQLSchema):
         
         if model == Oligo:
             return ['name','sequence', 'scale', 'purification', FieldUse(), 
-            'gene', 'description', 'delivery_notification', 'synonym', 'requested_by_user', 'requested_date', 'ordered', 
-            'order_date', 'location', 'order_conf_num', 'arrival_date', 'location',
-            'created_by',]
+            'gene', 'description', 'delivery_notification', 'synonym', 'ordered', 
+            'location', 'order_conf_num', 'location', 'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOligo(), SearchFieldOptLastnameOligo()]
         return super(OligoQLSchema, self).get_fields(model)
@@ -1923,8 +1922,7 @@ class OligoExportResource(resources.ModelResource):
     class Meta:
         model = Oligo
         fields = ('id', 'name','sequence', 'scale', 'purification', 'us_e', 
-        'gene', 'description', 'delivery_notification', 'synonym', 'requested_by_user', 'requested_date', 'location',
-        'created_date_time', 'created_by__username',)
+        'gene', 'description', 'delivery_notification', 'synonym', 'location', 'created_by__username',)
 
 def export_oligo(modeladmin, request, queryset):
     """Export Oligo"""
@@ -2019,14 +2017,14 @@ def change_oligo_status_to_approved(modeladmin, request, queryset):
     change_oligo_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
 
 class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', "purification", 'description', 'requested_by_user', 'requested_date', 'coloured_status')
+    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', "purification", 'description',  'coloured_status', 'created_by', 'last_changed_date_time')
     list_display_links = ('id',)
     list_per_page = 25
     formfield_overrides = {
     CharField: {'widget': TextInput(attrs={'size':'93'})},} # Make TextInput fields wider
     djangoql_schema = OligoQLSchema
     actions = [export_oligo, change_oligo_status_to_approved, change_oligo_status_to_arranged, change_oligo_status_to_delivered]
-    search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'requested_by_user__username', 'order_conf_num']
+    search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'created_by__username', 'order_conf_num']
 
     def get_oligo_short_sequence(self, instance):
         '''This function allows you to define a custom field for the list view to
@@ -2085,14 +2083,14 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
             # Check if the disapprove button was clicked. If so, and no approval
             # record for the object exists, create one
-            if "_disapprove_record" in request.POST:
-                if not obj.approval.all():
-                    original_last_changed_date_time = obj.last_changed_date_time
-                    obj.approval.create(activity_type='changed', activity_user=obj.created_by)
-                    obj.last_changed_approval_by_pi = False
-                    obj.save_without_historical_record()
-                    Oligo.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
-                return
+            # if "_disapprove_record" in request.POST:
+            #     if not obj.approval.all():
+            #         original_last_changed_date_time = obj.last_changed_date_time
+            #         obj.approval.create(activity_type='changed', activity_user=obj.created_by)
+            #         obj.last_changed_approval_by_pi = False
+            #         obj.save_without_historical_record()
+            #         Oligo.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
+            #     return
 
             if self.can_change:
 
@@ -2124,6 +2122,22 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
             else:
                 raise PermissionDenied
+        
+        if obj.approval_email == False:
+            obj.approval_email = True
+            message = """Dear Order Appproval Manager,
+
+            {} {} has ordered a new oligo - {} {}
+
+            """.format(request.user.first_name, request.user.last_name, obj.description, obj.us_e)
+            
+            message = inspect.cleandoc(message)
+            send_mail('New Oligo Ordered', 
+            message, 
+            SERVER_EMAIL_ADDRESS,
+            ORDER_APPROVAL_EMAIL_ADDRESSES,
+            fail_silently=True)
+            obj.save()
     
     def get_readonly_fields(self, request, obj=None):
         '''Override default get_readonly_fields to define user-specific read-only fields
@@ -2132,26 +2146,32 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         'created_date_time' and 'last_changed_date_time' fields must always be read-only
         because their set by Django itself'''
         
+        always_readonly_fields = ['created_date_time', 'last_changed_date_time', 'created_by']
+        other_fields = ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
+                        'synonym', 'order_conf_num', 'location']
+
         if obj:
             if self.can_change:
-                return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by'] 
+                if (obj.status == "arranged" or obj.status == "delivered") and request.user.groups.filter(name="Order receiver"):
+                    other_fields.remove('location')
+                    return other_fields + always_readonly_fields
+                elif request.user == obj.created_by and (obj.status == "unsubmitted" or obj.status == "submitted"):
+                    return always_readonly_fields
+                else:
+                    return always_readonly_fields + other_fields
             else:
-                return ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
-                'synonym', 'requested_by_user', 'requested_date', 'ordered', 'order_date',
-                'order_conf_num', 'arrival_date', 'location', 'created_date_time',
-                'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi', 'created_by',]
+                return always_readonly_fields
         else:
-            return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi',]
+            return ['created_date_time', 'last_changed_date_time']
     
     def add_view(self,request,extra_context=None):
         '''Override default add_view to show only desired fields'''
         
         self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
-                'ordered', 'order_date', 'order_conf_num', 'arrival_date',
-                'synonym', 'requested_by_user', 'requested_date', 'location',)
+                       'order_conf_num', 'synonym', 'location')
         return super(OligoPage,self).add_view(request)
 
-    def change_view(self,request,object_id,extra_context=None):
+    def change_view(self,request,object_id, extra_context=None):
         '''Override default change_view to show only desired fields'''
 
         self.can_change = False
@@ -2159,10 +2179,13 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         extra_context = extra_context or {}
         extra_context['show_disapprove'] = False
 
+        obj = Oligo.objects.get(pk=object_id)
+
         if object_id:
-            self.can_change = request.user == Oligo.objects.get(pk=object_id).created_by or \
+            self.can_change = (request.user == obj.created_by and (obj.status == "submitted" or obj.status == "unsubmitted")) or \
                     request.user.groups.filter(name='Lab manager').exists() or \
-                    request.user.groups.filter(name='Regular Lab Member').exists() or \
+                    request.user.groups.filter(name='Order manager').exists() or \
+                    request.user.groups.filter(name='Order receiver').exists() or \
                     request.user.is_superuser or request.user.labuser.is_principal_investigator
         
             if self.can_change:
@@ -2181,12 +2204,11 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                                  'show_save_as_new': False,
                                  'show_save': False,})
 
-            extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
+            # extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
 
         if '_saveasnew' in request.POST:
             self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
-                'ordered', 'order_date', 'order_conf_num', 'arrival_date',
-                'synonym', 'requested_by_user', 'requested_date', 'location',)
+                 'order_conf_num', 'synonym','location')
             extra_context.update({'show_save_and_continue': False,
                         'show_save': False,
                         'show_save_and_add_another': False,
@@ -2197,10 +2219,8 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         else:
             self.fields = ('name','sequence', 'scale', 'purification',
                            'us_e', 'gene', 'description', 'delivery_notification', 'synonym',
-                           'ordered', 'order_date', 'order_conf_num', 'arrival_date',
-                           'requested_by_user', 'requested_date', 'location',
-                           'created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 
-                           'last_changed_approval_by_pi', 'created_by',)
+                           'order_conf_num', 'location', 'last_changed_date_time', 
+                           'created_by',)
 
         return super(OligoPage,self).change_view(request,object_id, extra_context=extra_context)
 
@@ -2213,12 +2233,12 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
         }
 
-        if "_disapprove_record" in request.POST:
-            msg = format_html(
-                _('The {name} "{obj}" was disapproved.'),
-                **msg_dict)
-            self.message_user(request, msg, messages.SUCCESS)
-            return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
+        # if "_disapprove_record" in request.POST:
+        #     msg = format_html(
+        #         _('The {name} "{obj}" was disapproved.'),
+        #         **msg_dict)
+        #     self.message_user(request, msg, messages.SUCCESS)
+        #     return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
         
         return super(OligoPage,self).response_change(request,obj)
 
@@ -2400,15 +2420,15 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
 
             # Check if the disapprove button was clicked. If so, and no approval
             # record for the object exists, create one
-            if "_disapprove_record" in request.POST:
-                if not obj.approval.all():
-                    original_last_changed_date_time = obj.last_changed_date_time
-                    obj.approval.create(activity_type='changed', activity_user=obj.created_by)
-                    obj.last_changed_approval_by_pi = False
-                    obj.approval_user = None
-                    obj.save_without_historical_record()
-                    ScPombeStrain.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
-                return
+            # if "_disapprove_record" in request.POST:
+            #     if not obj.approval.all():
+            #         original_last_changed_date_time = obj.last_changed_date_time
+            #         obj.approval.create(activity_type='changed', activity_user=obj.created_by)
+            #         obj.last_changed_approval_by_pi = False
+            #         obj.approval_user = None
+            #         obj.save_without_historical_record()
+            #         ScPombeStrain.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
+            #     return
         
             if self.can_change:
 
@@ -2563,7 +2583,7 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
                                  'show_save': False,
                                  'show_obj_permission': False})
             
-            extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
+            #extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
             extra_context['show_formz'] = True
 
         if '_saveasnew' in request.POST:
@@ -2609,12 +2629,12 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
             'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
         }
 
-        if "_disapprove_record" in request.POST:
-            msg = format_html(
-                _('The {strain_name} "{obj}" was disapproved.'),
-                **msg_dict)
-            self.message_user(request, msg, messages.SUCCESS)
-            return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
+        # if "_disapprove_record" in request.POST:
+        #     msg = format_html(
+        #         _('The {strain_name} "{obj}" was disapproved.'),
+        #         **msg_dict)
+        #     self.message_user(request, msg, messages.SUCCESS)
+        #     return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
         
         return super(ScPombeStrainPage,self).response_change(request,obj)
 
@@ -2715,15 +2735,15 @@ class EColiStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.
             
             # Check if the disapprove button was clicked. If so, and no approval
             # record for the object exists, create one
-            if "_disapprove_record" in request.POST:
-                if not obj.approval.all():
-                    original_last_changed_date_time = obj.last_changed_date_time
-                    obj.approval.create(activity_type='changed', activity_user=obj.created_by)
-                    obj.last_changed_approval_by_pi = False
-                    obj.approval_user = None
-                    obj.save_without_historical_record()
-                    EColiStrain.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
-                return
+            # if "_disapprove_record" in request.POST:
+            #     if not obj.approval.all():
+            #         original_last_changed_date_time = obj.last_changed_date_time
+            #         obj.approval.create(activity_type='changed', activity_user=obj.created_by)
+            #         obj.last_changed_approval_by_pi = False
+            #         obj.approval_user = None
+            #         obj.save_without_historical_record()
+            #         EColiStrain.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
+            #     return
 
             if self.can_change:
                 
@@ -2824,7 +2844,7 @@ class EColiStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.
                                  'show_save': False,
                                  'show_obj_permission': False})
             
-            extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
+            #extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
             extra_context['show_formz'] = True
 
         self.fieldsets = (
@@ -2858,12 +2878,12 @@ class EColiStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.
             'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
         }
 
-        if "_disapprove_record" in request.POST:
-            msg = format_html(
-                _('The {name} "{obj}" was disapproved.'),
-                **msg_dict)
-            self.message_user(request, msg, messages.SUCCESS)
-            return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
+        # if "_disapprove_record" in request.POST:
+        #     msg = format_html(
+        #         _('The {name} "{obj}" was disapproved.'),
+        #         **msg_dict)
+        #     self.message_user(request, msg, messages.SUCCESS)
+        #     return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
         
         return super(EColiStrainPage,self).response_change(request,obj)
 
@@ -3120,15 +3140,15 @@ class CellLinePage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGua
             
             # Check if the disapprove button was clicked. If so, and no approval
             # record for the object exists, create one
-            if "_disapprove_record" in request.POST:
-                if not obj.approval.all():
-                    original_last_changed_date_time = obj.last_changed_date_time
-                    obj.approval.create(activity_type='changed', activity_user=obj.created_by)
-                    obj.last_changed_approval_by_pi = False
-                    obj.approval_user = None
-                    obj.save_without_historical_record()
-                    CellLine.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
-                return
+            # if "_disapprove_record" in request.POST:
+            #     if not obj.approval.all():
+            #         original_last_changed_date_time = obj.last_changed_date_time
+            #         obj.approval.create(activity_type='changed', activity_user=obj.created_by)
+            #         obj.last_changed_approval_by_pi = False
+            #         obj.approval_user = None
+            #         obj.save_without_historical_record()
+            #         CellLine.objects.filter(id=obj.pk).update(last_changed_date_time=original_last_changed_date_time)
+            #     return
 
             # Approve right away if the request's user is the principal investigator. If not,
             # create an approval record
@@ -3259,7 +3279,7 @@ class CellLinePage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGua
                                  'show_save': True,
                                  'show_obj_permission': False})
 
-            extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
+            #extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
             extra_context['show_formz'] = True
 
         if '_saveasnew' in request.POST:
@@ -3339,12 +3359,12 @@ class CellLinePage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGua
             'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
         }
 
-        if "_disapprove_record" in request.POST:
-            msg = format_html(
-                _('The {name} "{obj}" was disapproved.'),
-                **msg_dict)
-            self.message_user(request, msg, messages.SUCCESS)
-            return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
+        # if "_disapprove_record" in request.POST:
+        #     msg = format_html(
+        #         _('The {name} "{obj}" was disapproved.'),
+        #         **msg_dict)
+        #     self.message_user(request, msg, messages.SUCCESS)
+        #     return HttpResponseRedirect(reverse("admin:record_approval_recordtobeapproved_change", args=(obj.approval.latest('created_date_time').id,)))
         
         return super(CellLinePage,self).response_change(request,obj)
     

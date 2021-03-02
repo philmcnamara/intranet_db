@@ -47,17 +47,12 @@ def approve_records(modeladmin, request, queryset):
     # Oligos
     oligo_approval_records = collections_approval_records.filter(content_type__model='oligo')
     if oligo_approval_records:
-        if request.user.labuser.is_principal_investigator:
+        if request.user.groups.filter(name='Approval manager').exists():
             model = oligo_approval_records[0].content_object._meta.model
             for oligo_approval_record in oligo_approval_records:
                 obj = oligo_approval_record.content_object
-                if oligo_approval_record.activity_type=='created':
-                    if obj.last_changed_approval_by_pi==False:
-                        model.objects.filter(id=obj.id).update(created_approval_by_pi=True, last_changed_approval_by_pi=True, approval_by_pi_date_time=now_time)
-                    else:
-                        model.objects.filter(id=obj.id).update(created_approval_by_pi=True, approval_by_pi_date_time=now_time)
-                elif oligo_approval_record.activity_type=='changed':
-                    model.objects.filter(id=obj.id).update(last_changed_approval_by_pi=True, approval_by_pi_date_time=now_time)
+                obj.status="approved"
+                obj.save()
             oligo_approval_records.delete()
             success_message = True
         else:
@@ -66,7 +61,7 @@ def approve_records(modeladmin, request, queryset):
     #Orders
     order_approval_records = queryset.filter(content_type__app_label='order_management')
     if order_approval_records:
-        if  request.user.groups.filter(name='Approval manager').exists():
+        if request.user.groups.filter(name='Approval manager').exists():
             model = order_approval_records[0].content_object._meta.model
             order_ids = order_approval_records.values_list('object_id', flat=True)
             for order in model.objects.filter(id__in=order_ids):
