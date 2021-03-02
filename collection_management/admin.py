@@ -2152,7 +2152,9 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
         if obj:
             if self.can_change:
-                if (obj.status == "arranged" or obj.status == "delivered") and request.user.groups.filter(name="Order receiver"):
+                if request.user.groups.filter(name="Lab manager") or request.user.groups.filter(name="Order manager"):
+                    return always_readonly_fields
+                elif (obj.status == "arranged" or obj.status == "delivered") and request.user.groups.filter(name="Order receiver"):
                     other_fields.remove('location')
                     return other_fields + always_readonly_fields
                 elif request.user == obj.created_by and (obj.status == "unsubmitted" or obj.status == "submitted"):
@@ -2160,7 +2162,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 else:
                     return always_readonly_fields + other_fields
             else:
-                return always_readonly_fields
+                return always_readonly_fields + other_fields
         else:
             return ['created_date_time', 'last_changed_date_time']
     
