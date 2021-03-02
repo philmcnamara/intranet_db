@@ -392,7 +392,7 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     history = HistoricalRecords()
     
     def __str__(self):
-       return "{} - {}".format(self.id, self.name)
+       return "{} - {}".format(self.id, self.us_e)
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         
