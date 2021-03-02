@@ -1910,7 +1910,7 @@ class OligoQLSchema(DjangoQLSchema):
         
         if model == Oligo:
             return ['name','sequence', 'scale', 'purification', FieldUse(), 
-            'gene', 'description', 'delivery_notification', 'synonym', 'ordered', 
+            'gene', 'description', 'delivery_notification', 'synonym', 
             'location', 'order_conf_num', 'location', 'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOligo(), SearchFieldOptLastnameOligo()]
