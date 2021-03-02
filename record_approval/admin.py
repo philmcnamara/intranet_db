@@ -131,6 +131,8 @@ def notify_user_edits_required(modeladmin, request, queryset):
             message = """Dear {},
 
             {} has flagged some of your records to be amended. See below.
+
+            {}
             """
             
             message = inspect.cleandoc(message).format(user.first_name, request.user, records_str, SITE_TITLE)
