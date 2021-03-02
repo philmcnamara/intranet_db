@@ -5,6 +5,7 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.db.models import CharField
+from django.core.mail import send_mail
 from django.urls import reverse, resolve
 from django.core.mail import mail_admins
 from django.core.exceptions import PermissionDenied
@@ -77,6 +78,14 @@ from formz.models import Species
 
 import xlrd
 import csv
+
+# Modify approval records
+from record_approval.models import RecordToBeApproved
+from django_project.private_settings import SITE_TITLE
+from django_project.private_settings import SERVER_EMAIL_ADDRESS
+from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
+from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
+import inspect
 
 #################################################
 #                CUSTOM CLASSES                 #
@@ -1901,7 +1910,7 @@ class OligoQLSchema(DjangoQLSchema):
         
         if model == Oligo:
             return ['name','sequence', 'scale', 'purification', FieldUse(), 
-            'gene', 'description', 'synonym', 'requested_by_user', 'requested_date', 'ordered', 
+            'gene', 'description', 'delivery_notification', 'synonym', 'requested_by_user', 'requested_date', 'ordered', 
             'order_date', 'location', 'order_conf_num', 'arrival_date', 'location',
             'created_by',]
         elif model == User:
@@ -1914,7 +1923,7 @@ class OligoExportResource(resources.ModelResource):
     class Meta:
         model = Oligo
         fields = ('id', 'name','sequence', 'scale', 'purification', 'us_e', 
-        'gene', 'description', 'synonym', 'requested_by_user', 'requested_date', 'location',
+        'gene', 'description', 'delivery_notification', 'synonym', 'requested_by_user', 'requested_date', 'location',
         'created_date_time', 'created_by__username',)
 
 def export_oligo(modeladmin, request, queryset):
@@ -1940,14 +1949,83 @@ def export_oligo(modeladmin, request, queryset):
     return response
 export_oligo.short_description = "Export selected oligos"
 
+#################################################
+#                   ACTIONS                     #
+#################################################
+
+def change_oligo_status_to_arranged(modeladmin, request, queryset):
+    """Change the status of selected oligos from approved to arranged"""
+    
+    # Only Lab or Order Manager can use this action
+    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+        messages.error(request, 'Sorry, your account does not have that permission.')
+        return
+    else:
+        for oligo in queryset.filter(status = "approved"):
+            oligo.status = 'arranged'
+            oligo.save()
+    change_oligo_status_to_arranged.short_description = "Change STATUS of selected to ARRANGED"
+    change_oligo_status_to_arranged.acts_on_all = True
+
+def change_oligo_status_to_delivered(modeladmin, request, queryset):
+    """Change the status of selected oligos from approved to delivered"""
+    
+    # Only Lab Manager, Order Manager, or Order Receiver can use this action
+    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or request.user.groups.filter(name="Order receiver")):
+        messages.error(request, 'Sorry, your account does not have that permission.')
+        return
+    else:
+        for oligo in queryset.filter(status = "arranged"):
+            oligo.status = 'delivered'
+            
+            # If an order does not have a delivery date and its status changes
+            # to 'delivered', set the date for delivered_date to the current
+            # date. If somebody requested a delivery notification, send it and
+            # set delivery_email to true to remember that an email has already been 
+            # sent out
+            if oligo.delivery_notification:
+                if not oligo.delivery_email:
+                    oligo.delivery_email = True
+                    message = """Dear {},
+
+                    Your oligo {} has just been delivered.
+
+                    """.format(oligo.created_by.first_name, oligo.name)
+                    
+                    message = inspect.cleandoc(message)
+                    send_mail('Delivery notification', 
+                    message, 
+                    SERVER_EMAIL_ADDRESS,
+                    [oligo.created_by.email],
+                    fail_silently=True)
+            oligo.save()
+
+    change_oligo_status_to_delivered.short_description = "Change STATUS of selected to DELIVERED"
+
+def change_oligo_status_to_approved(modeladmin, request, queryset):
+    """Change the status of selected oligos to approved"""
+    
+    # Only PI or designated staff can use this action
+    if not (request.user.groups.filter(name='Approval Manager').exists()):
+        messages.error(request, 'Sorry, your account does not have that permission.')
+        return
+    else:
+        for oligo in queryset.filter(status = "submitted"):
+            oligo.status = 'approved'
+            record = RecordToBeApproved.objects.all().get(object_id=oligo.id)
+            record.delete()
+            oligo.save()
+
+    change_oligo_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
+
 class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelAdmin, Approval):
-    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', "purification", 'description', 'requested_by_user', 'requested_date', 'ordered')
+    list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', "purification", 'description', 'requested_by_user', 'requested_date', 'coloured_status')
     list_display_links = ('id',)
     list_per_page = 25
     formfield_overrides = {
     CharField: {'widget': TextInput(attrs={'size':'93'})},} # Make TextInput fields wider
     djangoql_schema = OligoQLSchema
-    actions = [export_oligo]
+    actions = [export_oligo, change_oligo_status_to_approved, change_oligo_status_to_arranged, change_oligo_status_to_delivered]
     search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'requested_by_user__username', 'order_conf_num']
 
     def get_oligo_short_sequence(self, instance):
@@ -1961,6 +2039,25 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             else:
                 return instance.sequence[0:75] + "..."
     get_oligo_short_sequence.short_description = 'Sequence'
+
+    def coloured_status(self, instance):
+        '''Custom coloured status field for changelist_view'''
+
+        status = instance.status
+        
+        if status == "unsubmitted":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#ff0000;">{}</span>'.format(status.capitalize()))
+        elif status == "submitted":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#F5B041;">{}</span>'.format(status.capitalize()))
+        elif status == "arranged":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#0099cc;">{}</span>'.format(status.capitalize()))
+        elif status == "approved":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#00cc00;">{}</span>'.format(status.capitalize()))
+        elif status == "delivered":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(status.capitalize()))
+
+    coloured_status.short_description = 'Status'
+    coloured_status.admin_order_field = 'status'
 
     def save_model(self, request, obj, form, change):
         '''Override default save_model to limit a user's ability to save a record
@@ -2039,7 +2136,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             if self.can_change:
                 return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by'] 
             else:
-                return ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
+                return ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
                 'synonym', 'requested_by_user', 'requested_date', 'ordered', 'order_date',
                 'order_conf_num', 'arrival_date', 'location', 'created_date_time',
                 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi', 'created_by',]
@@ -2049,7 +2146,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     def add_view(self,request,extra_context=None):
         '''Override default add_view to show only desired fields'''
         
-        self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
+        self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
                 'ordered', 'order_date', 'order_conf_num', 'arrival_date',
                 'synonym', 'requested_by_user', 'requested_date', 'location',)
         return super(OligoPage,self).add_view(request)
@@ -2087,7 +2184,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
 
         if '_saveasnew' in request.POST:
-            self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description',
+            self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
                 'ordered', 'order_date', 'order_conf_num', 'arrival_date',
                 'synonym', 'requested_by_user', 'requested_date', 'location',)
             extra_context.update({'show_save_and_continue': False,
@@ -2099,7 +2196,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                         })
         else:
             self.fields = ('name','sequence', 'scale', 'purification',
-                           'us_e', 'gene', 'description', 'synonym',
+                           'us_e', 'gene', 'description', 'delivery_notification', 'synonym',
                            'ordered', 'order_date', 'order_conf_num', 'arrival_date',
                            'requested_by_user', 'requested_date', 'location',
                            'created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 

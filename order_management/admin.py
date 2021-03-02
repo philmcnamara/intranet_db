@@ -68,7 +68,6 @@ import inspect
 
 # delete button
 from django.contrib.auth.models import Permission
-from order_management.models import Order
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 

@@ -352,6 +352,13 @@ class Plasmid (models.Model, SaveWithoutHistoricalRecord):
 #                     OLIGO                     #
 #################################################
 
+OLIGO_STATUS_CHOICES = (
+('unsubmitted', 'unsubmitted'),
+('submitted', 'submitted'),
+('approved', 'approved'),
+('arranged', 'arranged'), 
+('delivered', 'delivered'))
+
 class Oligo (models.Model, SaveWithoutHistoricalRecord):
     
     name = models.CharField("name", max_length=255, unique=False, blank=False)
@@ -371,7 +378,7 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     order_conf_num = models.CharField("order confirmation number", max_length=64, blank=True)
     arrival_date = models.DateField("arrival_date", null=True, blank=True)
     location = models.CharField("location", max_length=255, blank=True)
-    
+    status = models.CharField("status", max_length=255, choices=OLIGO_STATUS_CHOICES, default="submitted", blank=False)
     created_date_time = models.DateTimeField("created", auto_now_add=True)
     created_approval_by_pi = models.BooleanField("record creation approval", default=False)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True)
@@ -379,6 +386,8 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     approval_by_pi_date_time = models.DateTimeField(null=True, default=None)
     approval = GenericRelation(RecordToBeApproved)
     created_by = models.ForeignKey(User, related_name='oligo_createdby_user', on_delete=models.PROTECT)
+    delivery_notification = models.BooleanField("Delivery notification?", default=False)
+    delivery_email = models.BooleanField(default=False)
     history = HistoricalRecords()
     
     def __str__(self):
