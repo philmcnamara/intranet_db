@@ -759,8 +759,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         # Specifies which fields should be shown as read-only and when
         always_readonly_fields = ['delivered_date', 'status', 'price_vat', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
         cloned_readonly_fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
-                                  'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'reorderable']
-        never_readonly_fields = ['quantity', 'price', 'urgent', 'supplier_order_number', 'delivery_alert', 'comment']
+                                  'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'reorderable', 'supplier_order_number']
+        never_readonly_fields = ['quantity', 'price', 'urgent', 'delivery_alert', 'comment']
         if obj:
             # admin-level user
             if (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists() or
