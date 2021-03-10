@@ -1894,28 +1894,45 @@ from .models import Oligo
 from import_export.admin import ImportExportModelAdmin, ImportMixin
 from import_export import fields
 from import_export.widgets import ForeignKeyWidget
+from django.contrib.contenttypes.fields import GenericRelation
+from django.dispatch import receiver
+from import_export.signals import post_import, post_export
 
-class OligoImportResource(resources.ModelResource):
+# class OligoImportResource(resources.ModelResource):
 
-    #created_by = User.objects.get(username='created_by')
-    #us_e = fields.Field(default="test")
+#     # def get_user(self, request):
+#     #     return request.user
 
-    created_by = fields.Field(
-        column_name='created_by',
-        attribute='created_by',
-        widget=ForeignKeyWidget(User, field='username')
-    )
+#     #user = get_user()
 
-    #created_by = Field(attribute=User.objects.get(username='created_by'), column_name='created_by')
+#     #created_by = fields.Field(default=get_user(request))
 
-    class Meta:
-        model = Oligo
-        exclude = ('delivery_notification', 'delivery_email', 'approval_email', 'order_conf_num', 'location', 'status', 'last_changed_date_time',)
-        
-# class OligoImportAdmin(ImportExportModelAdmin):
-#     resource_class = OligoImportResource
+#     created_by = fields.Field(
+#         column_name='created_by',
+#         attribute='created_by',
+#         widget=ForeignKeyWidget(User, field='username')
+#     )
 
-# admin.site.register(Oligo, OligoImportAdmin)
+#     # def change_field(self, request, obj):
+#     #     obj.us_e = "post_import test"
+#     #     obj.save()
+#     #     return super()
+
+#     #approval = GenericRelation(RecordToBeApproved)
+
+#     #created_by = Field(default=request.user)
+
+#     #created_by = Field(attribute=User.objects.get(username='created_by'), column_name='created_by')
+
+#     class Meta:
+#         model = Oligo
+#         exclude = ('delivery_notification', 'delivery_email', 'approval_email', 'order_conf_num', 'location', 'status', 'last_changed_date_time',
+#         'created_by')
+
+# @receiver(post_import, dispatch_uid="testing")
+# def _post_import(model, **kwargs):
+#     model.us_e = "post_import test"
+#     model.save()
 
 class SearchFieldOptUsernameOligo(SearchFieldOptUsername):
 
@@ -2041,7 +2058,7 @@ def change_oligo_status_to_approved(modeladmin, request, queryset):
 
     change_oligo_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
 
-class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, ImportMixin, admin.ModelAdmin):
+class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, admin.ModelAdmin):
     list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', "purification", 'description',  'coloured_status', 'created_by', 'last_changed_date_time')
     list_display_links = ('id',)
     list_per_page = 25
@@ -2050,7 +2067,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, ImportMixin,
     djangoql_schema = OligoQLSchema
     actions = [export_oligo, change_oligo_status_to_approved, change_oligo_status_to_arranged, change_oligo_status_to_delivered]
     search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'created_by__username', 'order_conf_num']
-    resource_class = OligoImportResource
+    #resource_class = OligoImportResource
 
     def get_oligo_short_sequence(self, instance):
         '''This function allows you to define a custom field for the list view to
