@@ -2341,13 +2341,13 @@ class ScPombeStrainExportResource(resources.ModelResource):
 
     class Meta:
         model = ScPombeStrain
-        fields = ('id', 'box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type',
+        fields = ('id', 'box_number', 'strain_name', 'former_name', 'parent_1__strain_name', 'parent_2__strain_name', 'mating_type',
         'auxotrophic_marker', 'genotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
-        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by', 'made_by', 'ploidy', 'historical_strain',
+        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by__username', 'made_by', 'ploidy', 'historical_strain',
         'created_date_time', 'created_by__username',)
-        export_order = ('id', 'box_number', 'strain_name', 'former_name', 'parent_1', 'parent_2', 'mating_type',
+        export_order = ('id', 'box_number', 'strain_name', 'former_name', 'parent_1__strain_name', 'parent_2__strain_name', 'mating_type',
         'auxotrophic_marker', 'genotype', 'integrated_plasmids', 'cassette_plasmids', 'episomal_plasmids_in_stock',
-        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by', 'made_by', 'ploidy',  'historical_strain',
+        'phenotype', 'received_from', 'comment', 'frozen_on', 'frozen_by__username', 'made_by', 'ploidy',  'historical_strain',
         'created_date_time', 'created_by__username',)
 
 def export_scpombestrain(modeladmin, request, queryset):
