@@ -395,18 +395,20 @@ def change_order_status_to_delivered(modeladmin, request, queryset):
 
 change_order_status_to_delivered.short_description = "Change STATUS of selected to DELIVERED"
 
-# def change_order_status_to_used_up(modeladmin, request, queryset):
-#     """Change the status of selected orders from delivered to used up"""
+def change_order_status_to_cancelled(modeladmin, request, queryset):
+    """Change the status of selected orders to cancelled"""
     
-#     # Only Lab or Order Manager can use this action
-#     if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
-#         messages.error(request, 'Sorry, your account does not have that permission.')
-#         return
-#     else:
-#         for order in queryset.filter(status = "delivered"):
-#             order.status = 'used up'
-#             order.save()
-# change_order_status_to_used_up.short_description = "Change STATUS of selected to USED UP"
+    # Only Lab or Order Manager can use this action
+    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+        messages.error(request, 'Sorry, your account does not have that permission.')
+        return
+    else:
+        for order in queryset:
+            order.status = 'cancelled'
+            order.save()
+change_order_status_to_cancelled.short_description = "Change STATUS of selected to CANCELLED"
+change_order_status_to_cancelled.acts_on_all = True
+
 
 def change_order_status_to_approved(modeladmin, request, queryset):
     """Change the status of selected orders to approved"""
@@ -621,7 +623,8 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     inlines = [OrderExtraDocInline, AddOrderExtraDocInline]
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
-    actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, export_orders, export_chemicals, mass_update]
+    actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, change_order_status_to_cancelled,
+               export_orders, export_chemicals, mass_update]
     search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'supplier_order_number',
                      'part_description', 'status', 'comment', 'created_by__username']
     

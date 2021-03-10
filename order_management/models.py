@@ -137,7 +137,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     price_vat = models.DecimalField("price (VAT-inclusive)", null=True, decimal_places=2, max_digits=10, blank=True)
     status = models.CharField("status", max_length=255, choices=ORDER_STATUS_CHOICES, default="submitted", blank=False)
     urgent = models.BooleanField("is this an urgent order?", default=False)
-    delivery_alert = models.BooleanField("delivery notification?", default=False)
+    delivery_alert = models.BooleanField("delivery notification?", default=True)
     primary_location = models.CharField("primary location", help_text="Please update with item's location after it arrives",
                                          max_length=255, blank=True)
     backup_location = models.CharField("backup location", max_length=255, blank=True)

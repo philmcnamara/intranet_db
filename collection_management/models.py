@@ -376,7 +376,7 @@ class Oligo (models.Model, SaveWithoutHistoricalRecord):
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True)
     approval = GenericRelation(RecordToBeApproved)
     created_by = models.ForeignKey(User, related_name='oligo_createdby_user', on_delete=models.PROTECT)
-    delivery_notification = models.BooleanField("Delivery notification?", default=False)
+    delivery_notification = models.BooleanField("Delivery notification?", default=True)
     approval_email = models.BooleanField(default=False)
     delivery_email = models.BooleanField(default=False)
     history = HistoricalRecords()
