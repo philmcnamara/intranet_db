@@ -357,7 +357,8 @@ OLIGO_STATUS_CHOICES = (
 ('submitted', 'submitted'),
 ('approved', 'approved'),
 ('arranged', 'arranged'), 
-('delivered', 'delivered'))
+('delivered', 'delivered'),
+('cancelled', 'cancelled'))
 
 class Oligo (models.Model, SaveWithoutHistoricalRecord):
     

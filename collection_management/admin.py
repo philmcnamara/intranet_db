@@ -2004,8 +2004,8 @@ def change_oligo_status_to_arranged(modeladmin, request, queryset):
         for oligo in queryset.filter(status = "approved"):
             oligo.status = 'arranged'
             oligo.save()
-    change_oligo_status_to_arranged.short_description = "Change STATUS of selected to ARRANGED"
-    change_oligo_status_to_arranged.acts_on_all = True
+change_oligo_status_to_arranged.short_description = "Change STATUS of selected to ARRANGED"
+change_oligo_status_to_arranged.acts_on_all = True
 
 def change_oligo_status_to_delivered(modeladmin, request, queryset):
     """Change the status of selected oligos from approved to delivered"""
@@ -2040,7 +2040,7 @@ def change_oligo_status_to_delivered(modeladmin, request, queryset):
                     fail_silently=True)
             oligo.save()
 
-    change_oligo_status_to_delivered.short_description = "Change STATUS of selected to DELIVERED"
+change_oligo_status_to_delivered.short_description = "Change STATUS of selected to DELIVERED"
 
 def change_oligo_status_to_approved(modeladmin, request, queryset):
     """Change the status of selected oligos to approved"""
@@ -2056,7 +2056,36 @@ def change_oligo_status_to_approved(modeladmin, request, queryset):
             record.delete()
             oligo.save()
 
-    change_oligo_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
+change_oligo_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
+
+def change_oligo_status_to_cancelled(modeladmin, request, queryset):
+    """Change the status of selected oligos to cancelled"""
+    
+    # Only Lab or Order Manager can use this action
+    if not (request.user.groups.filter(name='Lab manager').exists() or request.user.groups.filter(name='Order manager').exists()):
+        messages.error(request, 'Sorry, your account does not have that permission.')
+        return
+    else:
+        for oligo in queryset:
+            oligo.status = 'cancelled'
+            oligo.save()
+change_oligo_status_to_cancelled.short_description = "Change STATUS of selected to CANCELLED"
+change_oligo_status_to_cancelled.acts_on_all = True
+import copy
+
+def copy_oligo(modeladmin, request, queryset):
+    for oligo in queryset:
+        clone = copy.copy(oligo)
+        clone.id = None
+        clone.created_by = request.user
+        clone.status = "unsubmitted"
+        clone.approval_email = False
+        clone.delivery_email = False
+        clone.delivery_notification = True
+        clone.order_conf_num = None
+        clone.save()
+    copy_oligo.short_description = "Copy selected oligos"
+
 
 class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, admin.ModelAdmin):
     list_display = ('id', 'name','get_oligo_short_sequence', 'gene', 'us_e', "purification", 'description',  'coloured_status', 'created_by', 'last_changed_date_time')
@@ -2065,7 +2094,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
     formfield_overrides = {
     CharField: {'widget': TextInput(attrs={'size':'93'})},} # Make TextInput fields wider
     djangoql_schema = OligoQLSchema
-    actions = [export_oligo, change_oligo_status_to_approved, change_oligo_status_to_arranged, change_oligo_status_to_delivered]
+    actions = [copy_oligo, change_oligo_status_to_approved, change_oligo_status_to_arranged, change_oligo_status_to_delivered, change_oligo_status_to_cancelled, export_oligo]
     search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'created_by__username', 'order_conf_num']
     #resource_class = OligoImportResource
 
@@ -2096,6 +2125,9 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
             return mark_safe('<span style="width:100%; height:100%; background-color:#00cc00;">{}</span>'.format(status.capitalize()))
         elif status == "delivered":
             return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(status.capitalize()))
+        elif status == "cancelled":
+            return mark_safe('<span style="width:100%; height:100%; background-color:#000000; color: white;">{}</span>'.format(status.capitalize()))
+            
 
     coloured_status.short_description = 'Status'
     coloured_status.admin_order_field = 'status'
@@ -2180,6 +2212,10 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
             SERVER_EMAIL_ADDRESS,
             ORDER_APPROVAL_EMAIL_ADDRESSES,
             fail_silently=True)
+            obj.save()
+        
+        if obj.status == "unsubmitted":
+            obj.status = "submitted"
             obj.save()
     
     def get_readonly_fields(self, request, obj=None):

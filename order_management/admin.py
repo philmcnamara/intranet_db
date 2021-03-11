@@ -933,21 +933,15 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             return mark_safe('<span style="width:100%; height:100%; background-color:#ff0000;">{}</span>'.format(status.capitalize()))
         elif status == "submitted":
             return mark_safe('<span style="width:100%; height:100%; background-color:#F5B041;">{}</span>'.format(status.capitalize()))
-        # elif status == "open":
-        #     return mark_safe('<span style="width:100%; height:100%; background-color:#F9E79F;">{}</span>'.format(status.capitalize()))
         elif status == "arranged":
             return mark_safe('<span style="width:100%; height:100%; background-color:#0099cc;">{}</span>'.format(status.capitalize()))
         elif status == "approved":
             return mark_safe('<span style="width:100%; height:100%; background-color:#00cc00;">{}</span>'.format(status.capitalize()))
-        # elif status == "delivered":
-        #     return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(instance.delivered_date.strftime('%d.%m.%Y') if instance.delivered_date else status.capitalize()))
         elif status == "delivered":
             return mark_safe('<span style="width:100%; height:100%; background-color:#D5D8DC;">{}</span>'.format(status.capitalize()))
         elif status == "cancelled":
             return mark_safe('<span style="width:100%; height:100%; background-color:#000000; color: white;">{}</span>'.format(status.capitalize()))
-        # elif status == "used up":
-        #     return mark_safe('<span style="width:100%; height:100%; border-style: double;">{}</span>'.format(status.capitalize()))
-
+            
     coloured_status.short_description = 'Status'
     coloured_status.admin_order_field = 'status'
 
