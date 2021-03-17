@@ -898,10 +898,11 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
         part_description = instance.part_description.strip()
         part_description = part_description #[:50] + "..." if len(part_description) > 50 else part_description
-        if instance.status != "cancelled":  
-            return part_description
-        else:
-            return mark_safe('<span style="text-decoration: line-through;">{}</span>'.format(part_description))
+        return part_description
+        # if instance.status != "cancelled":  
+        #     return part_description
+        # else:
+        #     return mark_safe('<span style="text-decoration: line-through;">{}</span>'.format(part_description))
     item_description.short_description = 'Part description'
     item_description.admin_order_field = 'part_description'
 

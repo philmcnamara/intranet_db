@@ -142,6 +142,22 @@ def notify_user_edits_required(modeladmin, request, queryset):
         return HttpResponseRedirect(".")
 notify_user_edits_required.short_description = "Notify users of required edits"
 
+def mark_orders_cancelled(modeladmin, request, queryset):
+    '''Change the status of selected orders to cancelled'''
+    order_approval_records = queryset.filter(content_type__app_label='order_management')
+    for record in order_approval_records:
+        if request.user.groups.filter(name='Approval manager').exists():
+            for record in order_approval_records:
+                obj = record.content_object
+                obj.status="cancelled"
+                obj.save()
+            record.delete()
+
+    if queryset.filter(content_type__app_label='collection_management').count() > 0:
+        messages.warning(request, "Some of the selected items were not orders and have not been changed")
+
+mark_orders_cancelled.short_description = "Cancel selected orders"
+
 # def approve_all_new_orders(modeladmin, request, queryset):
 #     """Approve all new orders """
 
@@ -196,7 +212,7 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
     list_display_links = ('id', )
     list_per_page = 50
     ordering = ['content_type', '-activity_type', 'object_id']
-    actions = [approve_records, notify_user_edits_required]
+    actions = [approve_records, notify_user_edits_required, mark_orders_cancelled]
     list_filter = (ContentTypeFilter, 'activity_type', )
     
     def get_readonly_fields(self, request, obj=None):
