@@ -1897,6 +1897,7 @@ from import_export.widgets import ForeignKeyWidget
 from django.contrib.contenttypes.fields import GenericRelation
 from django.dispatch import receiver
 from import_export.signals import post_import, post_export
+#from import_export.resources import after_import
 
 # class OligoImportResource(resources.ModelResource):
 
@@ -1907,11 +1908,17 @@ from import_export.signals import post_import, post_export
 
 #     #created_by = fields.Field(default=get_user(request))
 
-#     created_by = fields.Field(
-#         column_name='created_by',
-#         attribute='created_by',
-#         widget=ForeignKeyWidget(User, field='username')
-#     )
+    # created_by = fields.Field(
+    #     column_name='created_by',
+    #     attribute='created_by',
+    #     widget=ForeignKeyWidget(User, field='username')
+    # )
+
+    # def after_import(self, dataset, result, using_transactions, dry_run, **kwargs):
+    #     super().after_import(dataset, result, using_transactions, dry_run, **kwargs)
+        
+    #     obj.us_e = "import_testing"
+    #     obj.save()
 
 #     # def change_field(self, request, obj):
 #     #     obj.us_e = "post_import test"
@@ -1924,14 +1931,14 @@ from import_export.signals import post_import, post_export
 
 #     #created_by = Field(attribute=User.objects.get(username='created_by'), column_name='created_by')
 
-#     class Meta:
-#         model = Oligo
-#         exclude = ('delivery_notification', 'delivery_email', 'approval_email', 'order_conf_num', 'location', 'status', 'last_changed_date_time',
-#         'created_by')
+    # class Meta:
+    #     model = Oligo
+    #     exclude = ('delivery_notification', 'delivery_email', 'approval_email', 'order_conf_num', 'location', 'status', 'last_changed_date_time',
+    #     'created_by')
 
-# @receiver(post_import, dispatch_uid="testing")
+# @receiver(post_import, dispatch_uid="modify_import")
 # def _post_import(model, **kwargs):
-#     model.us_e = "post_import test"
+#     model.us_e = "test import use"
 #     model.save()
 
 class SearchFieldOptUsernameOligo(SearchFieldOptUsername):
@@ -2095,7 +2102,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
     CharField: {'widget': TextInput(attrs={'size':'93'})},} # Make TextInput fields wider
     djangoql_schema = OligoQLSchema
     actions = [copy_oligo, change_oligo_status_to_approved, change_oligo_status_to_arranged, change_oligo_status_to_delivered, change_oligo_status_to_cancelled, export_oligo]
-    search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'created_by__username', 'order_conf_num']
+    search_fields = ['name', 'sequence', 'description', 'us_e', 'gene', 'created_by__username', 'order_conf_num', 'status']
     #resource_class = OligoImportResource
 
     def get_oligo_short_sequence(self, instance):
