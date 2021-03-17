@@ -147,10 +147,9 @@ def mark_orders_cancelled(modeladmin, request, queryset):
     order_approval_records = queryset.filter(content_type__app_label='order_management')
     for record in order_approval_records:
         if request.user.groups.filter(name='Approval manager').exists():
-            for record in order_approval_records:
-                obj = record.content_object
-                obj.status="cancelled"
-                obj.save()
+            obj = record.content_object
+            obj.status="cancelled"
+            obj.save()
             record.delete()
 
     if queryset.filter(content_type__app_label='collection_management').count() > 0:
