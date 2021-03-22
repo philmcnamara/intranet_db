@@ -20,6 +20,7 @@ from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
 from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
 from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
+from django_project.private_settings import ALLOWED_HOSTS
 
 #################################################
 #        ADDED FUNCTIONALITIES IMPORTS          #
@@ -724,9 +725,9 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
             {} {} has placed a new order for {} item {} - {}
 
-            You can see all items pending approval here: https://baumann.imb.uni-mainz.de/record_approval/recordtobeapproved/
+            You can see all items pending approval here: https://{}/record_approval/recordtobeapproved/
 
-            """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description)
+            """.format(request.user.first_name, request.user.last_name, obj.supplier, obj.supplier_part_no, obj.part_description, ALLOWED_HOSTS[0])
 
             if obj.comment:
                 message += "\nComment: {}".format(obj.comment)
