@@ -513,8 +513,10 @@ def copy_order(modeladmin, request, queryset):
             clone.internal_order_no = "{}-{}".format(clone.pk, datetime.date.today().strftime("%y%m%d"))
             clone.approval_email=False
             clone.cloned=True
+            clone.delivery_alert=True
             clone.urgent_email=False
             clone.urgent=False
+            clone.supplier_order_number=None
             clone.save()
         else:
             messages.warning(request, 'This order is not reorderable, see comment for alternative')
