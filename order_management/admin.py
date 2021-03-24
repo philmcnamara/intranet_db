@@ -516,6 +516,8 @@ def copy_order(modeladmin, request, queryset):
             clone.delivery_alert=True
             clone.urgent_email=False
             clone.urgent=False
+            clone.comment=""
+            clone.quantity=None
             clone.supplier_order_number=None
             clone.save()
         else:
