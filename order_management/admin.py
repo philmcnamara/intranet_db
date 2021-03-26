@@ -379,12 +379,7 @@ def change_order_status_to_delivered(modeladmin, request, queryset):
                     order.delivery_email = True
                     message = """Dear {},
 
-                    your order #{} for {} : {} has just been delivered.
-
-                    Regards,
-                    The {}
-
-                    """.format(order.created_by.first_name, order.pk, order.part_name, order.part_description, SITE_TITLE)
+                    your order #{} for {} has just been delivered.""".format(order.created_by.first_name, order.pk, order.part_name)
                     
                     message = inspect.cleandoc(message)
                     send_mail('Delivery notification', 
@@ -679,34 +674,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                     # current date-time
                     if obj.status in ['approved', 'arranged', 'delivered']:
                         obj.order_manager_created_date_time = timezone.now()
-                
-                # If an order does not have a delivery date and its status changes
-                # to 'delivered', set the date for delivered_date to the current
-                # date. If somebody requested a delivery notification, send it and
-                # set delivery_email to true to remember that an email has already been 
-                # sent out
-                if not order.delivered_date:
-                    if obj.status == "delivered":
-                        obj.delivered_date = datetime.date.today()
-                        if order.delivery_alert:
-                            if not order.delivery_email:
-                                obj.delivery_email = True
-                                message = """Dear {},
 
-                                your order #{} for {} has just been delivered.
-
-                                """.format(obj.created_by.first_name, obj.pk, obj.part_description, SITE_TITLE)
-                                
-                                message = inspect.cleandoc(message)
-                                try:
-                                    send_mail('Delivery notification', 
-                                    message, 
-                                    SERVER_EMAIL_ADDRESS,
-                                    [obj.created_by.email],
-                                    fail_silently=False,)
-                                    messages.success(request, 'Delivery notification was sent.')
-                                except:
-                                    messages.warning(request, 'Could not send delivery notification.')
             if obj.status == "unsubmitted":
                 # Add approval record
                 if not request.user.labuser.is_principal_investigator:
