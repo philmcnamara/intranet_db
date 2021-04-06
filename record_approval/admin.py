@@ -51,7 +51,8 @@ def approve_records(modeladmin, request, queryset):
             model = oligo_approval_records[0].content_object._meta.model
             for oligo_approval_record in oligo_approval_records:
                 obj = oligo_approval_record.content_object
-                obj.status="approved"
+                if obj.status == "submitted":
+                    obj.status="approved"
                 obj.save()
             oligo_approval_records.delete()
             success_message = True
@@ -90,6 +91,8 @@ def approve_records(modeladmin, request, queryset):
                     except:
                         print("email failed to send")
             model.objects.filter(id__in=order_ids).update(status="approved")
+            for i in model.objects.filter(id__in=order_ids):
+                i.save()
             order_approval_records.delete()
             success_message = True
         else:
