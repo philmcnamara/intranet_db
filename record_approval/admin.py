@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 import inspect
+import datetime
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 from django.utils.text import capfirst
@@ -15,8 +16,11 @@ from django.contrib.contenttypes.models import ContentType
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
 from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
+from django_project.private_settings import ALLOWED_HOSTS
+from admin_comments.admin import CommentInline
 
 from django.utils import timezone
+
 
 def approve_records(modeladmin, request, queryset):
     """Approve records"""
@@ -107,43 +111,6 @@ def approve_records(modeladmin, request, queryset):
     return HttpResponseRedirect(".")
 approve_records.short_description = "Approve records"
 
-def notify_user_edits_required(modeladmin, request, queryset):
-    """Notify a user that a collection record must be edited"""
-
-    # queryset = queryset.filter(content_type__app_label='collection_management')
-
-    if queryset.filter(message=''):
-        messages.error(request, 'Some of the records you have selected do not have a message. Please add a message to them, and try again')
-        return HttpResponseRedirect(".")
-    else:
-        user_ids= set(queryset.values_list('activity_user', flat=True).distinct())
-        now_time = timezone.now()
-        for user_id in user_ids:
-            user = User.objects.get(id=user_id)
-            records = [(str(rec.content_type.name).capitalize(), str(rec.content_object), rec.message) for rec in queryset.filter(activity_user__id=user_id)]
-
-            records_str = ''
-            for rec in records:
-                records_str = records_str + '\t'.join(rec).strip() + '\n'
-
-            message = """Dear {},
-
-            {} has flagged some of your records to be amended. See below.
-
-            {}
-            """
-            
-            message = inspect.cleandoc(message).format(user.first_name, request.user, records_str, SITE_TITLE)
-
-            send_mail('Some records that you have created/changed need your attention', 
-                    message, 
-                    SERVER_EMAIL_ADDRESS,
-                    [user.email],
-                    fail_silently=False,)
-        messages.success(request, 'Users have been notified of required edits')
-        queryset.update(message_date_time=now_time, edited=False)
-        return HttpResponseRedirect(".")
-notify_user_edits_required.short_description = "Notify users of required edits"
 
 def mark_orders_cancelled(modeladmin, request, queryset):
     '''Change the status of selected orders to cancelled'''
@@ -159,24 +126,6 @@ def mark_orders_cancelled(modeladmin, request, queryset):
         messages.warning(request, "Some of the selected items were not orders and have not been changed")
 
 mark_orders_cancelled.short_description = "Cancel selected orders"
-
-# def approve_all_new_orders(modeladmin, request, queryset):
-#     """Approve all new orders """
-
-#     if request.user.labuser.is_principal_investigator:
-#         orders = Order.objects.filter(created_approval_by_pi=False)
-#         if orders.exists():
-#             orders.update(created_approval_by_pi=True)
-#             RecordToBeApproved.objects.filter(content_type__app_label='order_management').delete()
-#             messages.success(request, 'New orders have been approved')
-#         else:
-#             messages.warning(request, 'No new orders to approve')
-#     else:
-#         messages.error(request, 'You are not allowed to approve orders')
-
-#     return HttpResponseRedirect(".")
-
-# approve_all_new_orders.short_description = "Approve all new orders"
 
 class ContentTypeFilter(admin.SimpleListFilter):
 
@@ -209,53 +158,36 @@ class ContentTypeFilter(admin.SimpleListFilter):
 
 class RecordToBeApprovedPage(admin.ModelAdmin):
     
-    list_display = ('id', 'titled_content_type', 'record_link', 'coloured_activity_type', 'activity_user', 'history_link', 'message', 'message_sent','edited', )
-    #list_display = ('id', 'titled_content_type', 'coloured_activity_type', 'activity_user', 'message', 'message_sent','edited', )
+    list_display = ('id', 'titled_content_type', 'record_link', 'coloured_activity_type', 'activity_user', 'last_changed_date_time', 'history_link' )
     list_display_links = ('id', )
     list_per_page = 50
-    ordering = ['content_type', '-activity_type', 'object_id']
-    actions = [approve_records, notify_user_edits_required, mark_orders_cancelled]
+    ordering = ['-object_id']
+    actions = [approve_records, mark_orders_cancelled]
     list_filter = (ContentTypeFilter, 'activity_type', )
-    
+    inlines = [CommentInline,]
+
     def get_readonly_fields(self, request, obj=None):
         
         # Specifies which fields should be shown as read-only and when
         if obj:
-            return ['content_type', 'object_id', 'content_object', 'activity_type', 'activity_user',
-                    'message_date_time', 'edited', 'created_date_time',]
+            return ['content_type', 'object_id', 'content_object', 'activity_type', 'activity_user', 'created_date_time',]
         else:
             return ['created_date_time',]
-
-    # def changelist_view(self, request, extra_context=None):
-        
-        # Set queryset of action approve_all_new_orders
-
-        # if 'action' in request.POST and request.POST['action'] == 'approve_all_new_orders':
-        #     if not request.POST.getlist(admin.ACTION_CHECKBOX_NAME):
-        #         post = request.POST.copy()
-        #         for u in Order.objects.all():
-        #             post.update({admin.ACTION_CHECKBOX_NAME: str(u.id)})
-        #         request._set_post(post)
-        # return super(RecordToBeApprovedPage, self).changelist_view(request, extra_context=extra_context)
 
     def get_queryset(self, request):
         
         qs = super(RecordToBeApprovedPage, self).get_queryset(request)
 
-        # If user is approval manager show only collection items, not orders
+        # show PI and superuser everything
+        if request.user.labuser.is_principal_investigator or request.user.is_superuser:
+            return qs
 
-        if request.user.labuser.is_principal_investigator or request.user.is_superuser or request.user.groups.filter(name='Lab manager').exists():
-            return qs
-        elif request.user.groups.filter(name='Approval manager').exists():
-            qs = qs.filter(content_type__app_label='collection_management').exclude(content_type__model='oligo')
-            approval_record_ids = []
-            for approval_record in qs:
-                obj = approval_record.content_object
-                if request.user.id in obj.formz_projects.all().values_list('project_leader__id', flat=True):
-                    approval_record_ids.append(approval_record.id)
-            return qs.filter(id__in=approval_record_ids)
+        # show approval manager all unapproved orders by excluding collection management items
+        elif request.user.groups.filter(name="Approval manager").exists():
+            return qs.filter(content_type__app_label='collection_management').exclude(content_type__model='scpombestrain')
+
         else:
-            return qs
+            return RecordToBeApproved.objects.filter(activity_user__username=request.user.username)
 
     def record_link(self, instance):
         '''Custom link to a record field for changelist_view'''
@@ -295,12 +227,26 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
     coloured_activity_type.short_description = 'Activity type'
     coloured_activity_type.admin_order_field = 'activity_type'
 
-    def message_sent(self, instance):
-        '''changew_view column to show whether a message has been sent or not'''
 
-        if instance.message_date_time:
-            return True
+    def save_model(self, request, obj, form, change):
+
+        order = Order.objects.get(id=obj.object_id)
+
+        message = """There is a new comment on the order for {} - ID {}. You can find all pending approval records here: https://{}/record_approval/recordtobeapproved/
+        """.format(order.part_name, order.id, ALLOWED_HOSTS[0])
+
+        message = inspect.cleandoc(message)
+
+        # If the approval manager leaves the comment, notify the requester
+        if request.user.groups.filter(name="Approval manager").exists():
+            recipient = User.objects.get(username=order.created_by)
+            send_mail('New comment on your pending order', message, SERVER_EMAIL_ADDRESS, [recipient.email] ,fail_silently=False,)
+            messages.success(request, '{} has been notified of your new comment'.format(recipient.username))
+
+        # otherwise, notify the approval manager
         else:
-            return False
-    message_sent.boolean = True
-    message_sent.short_description = "Message sent?"
+            send_mail('New comment on pending order', message, SERVER_EMAIL_ADDRESS, [ORDER_MANAGER_EMAIL_ADDRESSES],fail_silently=False,)
+            messages.success(request, 'The approval manager been notified of your new comment')
+
+        obj.last_changed_date_time=datetime.datetime.now()
+        obj.save()

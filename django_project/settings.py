@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'record_approval',
     'my_admin',
     'csvimport.app.CSVImportConf',
+    'admin_comments'
     ]
 
 FORM_RENDERER = 'django.forms.renderers.TemplatesSetting' 
