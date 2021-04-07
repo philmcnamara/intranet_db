@@ -243,7 +243,7 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
 
         # otherwise, notify the approval manager
         else:
-            send_mail('New comment on pending order', message, SERVER_EMAIL_ADDRESS, [ORDER_MANAGER_EMAIL_ADDRESSES],fail_silently=False,)
+            send_mail('New comment on pending order', message, SERVER_EMAIL_ADDRESS, ORDER_MANAGER_EMAIL_ADDRESSES,fail_silently=False,)
             messages.success(request, 'The approval manager been notified of your new comment')
 
         obj.last_changed_date_time=datetime.datetime.now()
