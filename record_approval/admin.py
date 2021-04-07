@@ -27,14 +27,13 @@ def approve_records(modeladmin, request, queryset):
 
     now_time = timezone.now()
     success_message = False
-    warning_message = False
     
     # Collection records, except oligo
     collections_approval_records = queryset.filter(content_type__app_label='collection_management')
 
     for approval_record in collections_approval_records.exclude(content_type__model='oligo'):
         obj = approval_record.content_object
-        if request.user.id in obj.formz_projects.all().values_list('project_leader__id', flat=True):
+        if request.user.groups.filter(name='Approval manager').exists():
             model = obj._meta.model
             if approval_record.activity_type=='created':
                 if obj.last_changed_approval_by_pi==False:
@@ -46,7 +45,7 @@ def approve_records(modeladmin, request, queryset):
             approval_record.delete()
             success_message = True
         else:
-            warning_message = True
+            messages.error(request, "You are not allowed to approve changes")
     
     # Oligos
     oligo_approval_records = collections_approval_records.filter(content_type__model='oligo')
@@ -105,9 +104,6 @@ def approve_records(modeladmin, request, queryset):
     if success_message:
         messages.success(request, 'The records have been approved')
 
-    if warning_message:
-        messages.warning(request, 'Some/all of the records you have selected were not approved because you are not listed as a project leader for them')
-
     return HttpResponseRedirect(".")
 approve_records.short_description = "Approve records"
 
@@ -115,15 +111,17 @@ approve_records.short_description = "Approve records"
 def mark_orders_cancelled(modeladmin, request, queryset):
     '''Change the status of selected orders to cancelled'''
     order_approval_records = queryset.filter(content_type__app_label='order_management')
-    for record in order_approval_records:
-        if request.user.groups.filter(name='Approval manager').exists():
+    if request.user.groups.filter(name='Approval manager').exists():
+        for record in order_approval_records:
             obj = record.content_object
             obj.status="cancelled"
             obj.save()
             record.delete()
 
-    if queryset.filter(content_type__app_label='collection_management').count() > 0:
-        messages.warning(request, "Some of the selected items were not orders and have not been changed")
+        if queryset.filter(content_type__app_label='collection_management').count() > 0:
+            messages.warning(request, "Some of the selected items were not orders and have not been changed")
+    else:
+        messages.warning(request, "You are not allowed to cancel orders")
 
 mark_orders_cancelled.short_description = "Cancel selected orders"
 
