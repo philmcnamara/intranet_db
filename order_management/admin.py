@@ -680,8 +680,13 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 if not request.user.labuser.is_principal_investigator:
                     obj.approval.create(activity_type='created', activity_user=obj.history.latest().created_by)
                     Order.objects.filter(id=obj.pk).update(created_approval_by_pi=True)
-                obj.status="submitted"
-                obj.save()
+
+                if request.user == obj.created_by or request.user.groups.filter(name='Order manager').exists() or request.user.groups.filter(name='Approval manager').exists():
+                    obj.status="submitted"
+                    obj.save()
+                else:
+                    messages.set_level(request, messages.WARNING)
+                    messages.warning(request, "You are not allowed to submit orders created by other users")
             
             obj.save()
             

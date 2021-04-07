@@ -190,7 +190,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
             self.price_vat = self.price * Decimal(1.19)
         self.cas_number = self.cas_number.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
         self.ghs_pictogram = self.ghs_pictogram.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
-        
+
         super(Order, self).save(force_insert, force_update, using, update_fields)
 
 #################################################
