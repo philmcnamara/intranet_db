@@ -636,7 +636,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, change_order_status_to_cancelled,
                export_orders, mass_update]
     search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'supplier_order_number',
-                     'part_description', 'status', 'comment', 'created_by__username', 'ghs_codes']
+                     'part_description', 'status', 'comment', 'created_by__username', 'ghs_codes__code']
     autocomplete_fields = ['ghs_codes']
 
     def save_model(self, request, obj, form, change):
