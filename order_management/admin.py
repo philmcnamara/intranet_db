@@ -321,16 +321,17 @@ class AddOrderExtraDocInline(admin.TabularInline):
 #         ORDER IMPORT/EXPORT RESOURCE          #
 #################################################
 
-from import_export import resources
+from import_export import resources, fields
+#from import_export.widgets import ManyToManyWidget
 
 class OrderChemicalExportResource(resources.ModelResource):
     """Defines a custom export resource class for chemicals"""
-    
+    # ghs_codes = fields.Field(widget=ManyToManyWidget(GHSCode))
     class Meta:
         model = Order
-        fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'supplier_order_number',
+        fields = ['id','supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'supplier_order_number',
         'part_description', 'quantity', "primary_location", "backup_location",
-        "cas_number", 'reorderable', "ghs_codes", 'hazard_level_pregnancy')
+        "cas_number", 'reorderable', "ghs_codes", 'hazard_level_pregnancy']
 
 class OrderExportResource(resources.ModelResource):
     """Defines a custom export resource class for orders"""
@@ -452,12 +453,10 @@ def change_order_status_to_approved(modeladmin, request, queryset):
 change_order_status_to_approved.short_description = "Change STATUS of selected to APPROVED"
 
 def export_chemicals(modeladmin, request, queryset):
-    """Export all chemicals. A chemical is defined as an order
-    which has a non-null ghs_codes field and is not used up"""
+    """Export all chemicals. A chemical is defined as an order which has a non-null ghs_codes field"""
 
-    queryset = Order.objects.exclude(status="used up").annotate(text_len=Length('ghs_codes')).filter(text_len__gt=0).order_by('-id')
+    queryset = Order.objects.annotate(text_len=Length('ghs_codes')).filter(text_len__gt=0).order_by('-id')
     export_data = OrderChemicalExportResource().export(queryset)
-
     file_format = request.POST.get('format', default='none')
 
     if file_format == 'xlsx':
@@ -635,7 +634,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     djangoql_schema = OrderQLSchema
     mass_update_form = MyMassUpdateOrderForm
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, change_order_status_to_cancelled,
-               export_orders, export_chemicals, mass_update]
+               export_orders, mass_update]
     search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'supplier_order_number',
                      'part_description', 'status', 'comment', 'created_by__username', 'ghs_codes']
     autocomplete_fields = ['ghs_codes']
