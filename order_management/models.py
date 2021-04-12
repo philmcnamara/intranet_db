@@ -56,6 +56,20 @@ class SupplierOption(models.Model):
         super(SupplierOption, self).save(force_insert, force_update, using, update_fields)
 
 #################################################
+#             GHS CODE MODEL                    #
+#################################################
+
+class GHSCode(models.Model):
+    code = models.CharField("code", max_length=255, unique=True, blank=False)
+    description = models.TextField("description")
+
+    class Meta:
+        ordering = ["code"]
+    
+    def __str__(self):
+        return self.code + " - " + self.description
+
+#################################################
 #               MSDS FORD MODEL                 #
 #################################################
 
@@ -146,7 +160,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     delivered_date = models.DateField("delivered", blank=True, default=None, null=True)
     supplier_order_number = models.CharField("Supplier Order Number", max_length=255, blank=True, null=True)
     cas_number = models.CharField("CAS number", max_length=255, blank=True)
-    ghs_pictogram = models.CharField("GHS pictogram", max_length=255, blank=True)
+    ghs_codes = models.ManyToManyField("GHSCode", related_name='order_ghs_codes', blank=True)
     msds_form = models.ForeignKey(MsdsForm, on_delete=models.PROTECT, blank=True, null=True)
     hazard_level_pregnancy = models.CharField("Hazard level for pregnancy", max_length=255, choices=HAZARD_LEVEL_PREGNANCY_CHOICES, default='none', blank=True)
     approval_email = models.BooleanField(default=False, null=True)
@@ -160,6 +174,7 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_approval_by_pi = models.BooleanField(default=False, null=True)
     approval = GenericRelation(RecordToBeApproved)
+    history_ghs_codes = models.TextField("ghs codes", blank=True)
     history = HistoricalRecords()
 
     class Meta:
@@ -189,7 +204,6 @@ class Order(models.Model, SaveWithoutHistoricalRecord):
         if self.price:
             self.price_vat = self.price * Decimal(1.19)
         self.cas_number = self.cas_number.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
-        self.ghs_pictogram = self.ghs_pictogram.strip().replace("'","").replace('"',"").replace('\n'," ").replace('#'," ")
 
         super(Order, self).save(force_insert, force_update, using, update_fields)
 

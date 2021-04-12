@@ -14,6 +14,8 @@ from django.db.models.functions import Length
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext as _
 from django import forms
+from djangoql.schema import IntField
+
 
 
 from django_project.private_settings import SITE_TITLE
@@ -62,6 +64,7 @@ from .models import OrderExtraDoc
 from .models import Order
 from .models import MsdsForm
 from .models import SupplierOption
+from .models import GHSCode
 
 import datetime
 import time
@@ -327,7 +330,7 @@ class OrderChemicalExportResource(resources.ModelResource):
         model = Order
         fields = ('id','supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'supplier_order_number',
         'part_description', 'quantity', "primary_location", "backup_location",
-        "cas_number", 'reorderable', "ghs_pictogram", 'hazard_level_pregnancy')
+        "cas_number", 'reorderable', "ghs_codes", 'hazard_level_pregnancy')
 
 class OrderExportResource(resources.ModelResource):
     """Defines a custom export resource class for orders"""
@@ -336,7 +339,7 @@ class OrderExportResource(resources.ModelResource):
         model = Order
         fields = ('id', 'internal_order_no', 'supplier__name', 'part_name', 'supplier_part_no', 'part_category', 'supplier_order_number', 'part_description', 'quantity', 
             'price', 'price_vat', 'status', 'primary_location', "backup_location", 'comment', 'url', 'delivered_date', 'cas_number', 'reorderable',
-            'ghs_pictogram', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
+            'ghs_codes', 'hazard_level_pregnancy', 'created_date_time', 'order_manager_created_date_time', 
             'last_changed_date_time', 'created_by__username',)
 
 #################################################
@@ -450,9 +453,9 @@ change_order_status_to_approved.short_description = "Change STATUS of selected t
 
 def export_chemicals(modeladmin, request, queryset):
     """Export all chemicals. A chemical is defined as an order
-    which has a non-null ghs_pictogram field and is not used up"""
+    which has a non-null ghs_codes field and is not used up"""
 
-    queryset = Order.objects.exclude(status="used up").annotate(text_len=Length('ghs_pictogram')).filter(text_len__gt=0).order_by('-id')
+    queryset = Order.objects.exclude(status="used up").annotate(text_len=Length('ghs_codes')).filter(text_len__gt=0).order_by('-id')
     export_data = OrderChemicalExportResource().export(queryset)
 
     file_format = request.POST.get('format', default='none')
@@ -523,6 +526,14 @@ def copy_order(modeladmin, request, queryset):
 #                 ORDER PAGES                   #
 #################################################
 
+
+class SearchFieldGHSCodeM2M(IntField):
+    
+    name = 'ghs_codes_id'
+
+    def get_lookup_name(self):
+        return 'ghs_codes__id'
+
 class SearchFieldSupplierOption(StrField):
     """Create a list of unique supplier units for search"""
 
@@ -559,7 +570,7 @@ class SearchFieldOptPartDescription(StrField):
         return super(SearchFieldOptPartDescription, self).\
         get_options().all().distinct()
 
-class SearchFieldOptAzardousPregnancy(StrField):
+class SearchFieldOptHazardousPregnancy(StrField):
     """Create a list of unique Pregnancy hazard units for search"""
 
     model = Order
@@ -579,7 +590,7 @@ class SearchFieldOptLastnameOrder(SearchFieldOptLastname):
 class OrderQLSchema(DjangoQLSchema):
     '''Customize search functionality'''
     
-    include = (Order, User, SupplierOption) # Include only the relevant models to be searched
+    include = (Order, User, SupplierOption, GHSCode) # Include only the relevant models to be searched
 
     suggest_options = {
         Order: ['status', 'supplier', 'urgent'],
@@ -592,7 +603,7 @@ class OrderQLSchema(DjangoQLSchema):
             return ['id', SearchFieldOptSupplier(), 'part_name', 'supplier_part_no', 'part_category', 
             'internal_order_no', SearchFieldOptPartDescription(),
             'status', 'urgent', "primary_location", "backup_location", 'comment', 'delivered_date', 'cas_number', 'reorderable',
-            'ghs_pictogram', SearchFieldOptAzardousPregnancy(), 'created_date_time', 'last_changed_date_time', 'created_by',]
+            SearchFieldGHSCodeM2M(), SearchFieldOptHazardousPregnancy(), 'created_date_time', 'last_changed_date_time', 'created_by',]
         elif model == User:
             return [SearchFieldOptUsernameOrder(), SearchFieldOptLastnameOrder()]
         return super(OrderQLSchema, self).get_fields(model)
@@ -606,7 +617,7 @@ class MyMassUpdateOrderForm(MassUpdateForm):
         model = Order
         fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'supplier_order_number', 
                   'part_description', 'quantity', 'price','price_vat', 'primary_location', "backup_location", 'comment', 'url', 
-                  'cas_number', 'reorderable', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy']
+                  'cas_number', 'reorderable', 'ghs_codes', 'msds_form', 'hazard_level_pregnancy']
     
     def clean__validate(self):
         return True
@@ -626,8 +637,9 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
     actions = [copy_order, change_order_status_to_arranged, change_order_status_to_delivered, change_order_status_to_approved, change_order_status_to_cancelled,
                export_orders, export_chemicals, mass_update]
     search_fields = ['id', 'part_name', 'supplier__name', 'supplier_part_no', 'part_category', 'supplier_order_number',
-                     'part_description', 'status', 'comment', 'created_by__username']
-    
+                     'part_description', 'status', 'comment', 'created_by__username', 'ghs_codes']
+    autocomplete_fields = ['ghs_codes']
+
     def save_model(self, request, obj, form, change):
         
         # New orders
@@ -740,7 +752,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         # Specifies which fields should be shown as read-only and when
         always_readonly_fields = ['delivered_date', 'status', 'price_vat', 'order_manager_created_date_time','created_date_time', 'last_changed_date_time', 'created_by']
         cloned_readonly_fields = ['supplier', 'part_name', 'supplier_part_no', 'part_category', 'internal_order_no', 'part_description', 'primary_location', 'backup_location',
-                                  'url', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'reorderable', 'supplier_order_number']
+                                  'url', 'cas_number', 'ghs_codes', 'msds_form', 'hazard_level_pregnancy', 'reorderable', 'supplier_order_number']
         never_readonly_fields = ['quantity', 'price', 'urgent', 'delivery_alert', 'comment']
         if obj:
             # admin-level user
@@ -778,13 +790,13 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
             return ['order_manager_created_date_time', 'created_date_time',  'last_changed_date_time',]
 
     def add_view(self, request, extra_context=None):
-        
+
         # Specifies which fields should be shown in the add view
         self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'supplier_order_number',
                        'part_description', 'quantity', 'price', 'urgent', 'delivery_alert', 'primary_location', 'backup_location',
-                       'comment', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 'created_by')
+                       'comment', 'cas_number', 'ghs_codes', 'msds_form', 'hazard_level_pregnancy', 'created_by')
         self.raw_id_fields = ['msds_form']
-        self.autocomplete_fields = []
+        
         return super(OrderPage,self).add_view(request, extra_context=extra_context)
 
     def change_view(self, request, object_id, extra_context=None):
@@ -792,13 +804,17 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
         # Specifies which fields should be shown in the change view
         
         self.raw_id_fields = []
-        self.autocomplete_fields = ['msds_form']
         self.can_change = False
 
         if object_id:
             extra_context = extra_context or {}
             order = Order.objects.get(id=object_id)
             delete_permission = Permission.objects.get(codename="delete_order")
+            
+            if order.history_ghs_codes:
+                extra_context['ghs_codes'] = order.history_ghs_codes
+            
+            
             # Regular users can only edit their own orders before they are approved
             # Lab managers and order managers can edit all orders
             if (order.created_by == request.user and (order.status == "submitted" or order.status == "unsubmitted") or 
@@ -833,7 +849,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
         self.fields = ('supplier', 'part_name', 'supplier_part_no', 'part_category', 'url', 'internal_order_no', 'supplier_order_number',
                        'part_description', 'quantity', 'status', 'price', 'price_vat', 'urgent', 'delivery_alert', 'primary_location', 
-                       'backup_location', 'reorderable', 'comment', 'cas_number', 'ghs_pictogram', 'msds_form', 'hazard_level_pregnancy', 
+                       'backup_location', 'reorderable', 'comment', 'cas_number', 'ghs_codes', 'msds_form', 'hazard_level_pregnancy', 
                        'created_date_time', 'order_manager_created_date_time', 'delivered_date', 'created_by')
 
         return super(OrderPage,self).change_view(request, object_id, extra_context=extra_context)
@@ -974,6 +990,27 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
 
         return super(OrderPage, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
+    def save_related(self, request, form, formsets, change):
+        
+        super(OrderPage, self).save_related(request, form, formsets, change)
+
+        # Keep a record of the IDs of linked M2M fields in the main order record
+        # Not pretty, but it works
+
+        obj = Order.objects.get(pk=form.instance.id)
+        
+        ghs_codes = obj.ghs_codes.all().order_by('id')
+
+        obj.history_ghs_codes = str(tuple(ghs_codes.values_list('id', flat=True))).replace(',)', ')') if ghs_codes else ""
+
+        obj.save_without_historical_record()
+
+        history_obj = obj.history.latest()
+        history_obj.history_ghs_codes = obj.history_ghs_codes
+        history_obj.save()
+
+
+
 #################################################
 #                MSDS FORM PAGES                #
 #################################################
@@ -1086,9 +1123,21 @@ class SupplierOptionPage(admin.ModelAdmin):
     list_display_links = ('name', )
     list_per_page = 25
     ordering = ['name']
+    search_fields = ['name']
 
 # class HideStatus(CreateView):
 #     def get_context_data(self, *args, **kwargs):
 #         context = super(HideStatus, self).get_context_data(*args, **kwargs)
 #         context['my_additional_context'] = my_object
 #         return context
+
+#################################################
+#           GHS CODE PAGES                      #
+#################################################
+class GHSCodePage(admin.ModelAdmin):
+    
+    list_display = ('code', 'description')
+    list_display_links = ('code', )
+    list_per_page = 25
+    ordering = ['code']
+    search_fields = ['code', 'description']
