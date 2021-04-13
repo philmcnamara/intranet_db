@@ -769,14 +769,6 @@ class SaCerevisiaeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin,
                     # If an approval record for this object does not exist, create one
                     if not obj.approval.all().exists():
                         obj.approval.create(activity_type='changed', activity_user=request.user)
-                    else:
-                        # If an approval record for this object exists, check if a message was 
-                        # sent. If so, update the approval record's edited field
-                        approval_obj = obj.approval.all().latest(field_name='message_date_time')
-                        if approval_obj.message_date_time:
-                            if obj.last_changed_date_time > approval_obj.message_date_time:
-                                approval_obj.edited = True
-                                approval_obj.save()
 
             else:
                 raise PermissionDenied
@@ -1220,14 +1212,6 @@ class PlasmidPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGuar
                 # If an approval record for this object does not exist, create one
                 if not obj.approval.all().exists():
                     obj.approval.create(activity_type='changed', activity_user=request.user)
-                else:
-                    # If an approval record for this object exists, check if a message was 
-                    # sent. If so, update the approval record's edited field
-                    approval_obj = obj.approval.all().latest(field_name='message_date_time')
-                    if approval_obj.message_date_time:
-                        if timezone.now() > approval_obj.message_date_time:
-                            approval_obj.edited = True
-                            approval_obj.save()
 
             # Check if the request's user can change the object, if not raise PermissionDenied
 
@@ -2180,14 +2164,6 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
                 # If an approval record for this object does not exist, create one
                 if not obj.approval.all().exists():
                     obj.approval.create(activity_type='changed', activity_user=request.user)
-                else:
-                    # If an approval record for this object exists, check if a message was 
-                    # sent. If so, update the approval record's edited field
-                    approval_obj = obj.approval.all().latest(field_name='message_date_time')
-                    if approval_obj.message_date_time:
-                        if obj.last_changed_date_time > approval_obj.message_date_time:
-                            approval_obj.edited = True
-                            approval_obj.save()
 
             else:
                 raise PermissionDenied
@@ -2526,14 +2502,6 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
                     # If an approval record for this object does not exist, create one
                     if not obj.approval.all().exists():
                         obj.approval.create(activity_type='changed', activity_user=request.user)
-                    else:
-                        # If an approval record for this object exists, check if a message was 
-                        # sent. If so, update the approval record's edited field
-                        approval_obj = obj.approval.all().latest(field_name='message_date_time')
-                        if approval_obj.message_date_time:
-                            if obj.last_changed_date_time > approval_obj.message_date_time:
-                                approval_obj.edited = True
-                                approval_obj.save()
 
             else:
                 raise PermissionDenied
@@ -2841,14 +2809,6 @@ class EColiStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.
                     # If an approval record for this object does not exist, create one
                     if not obj.approval.all().exists():
                         obj.approval.create(activity_type='changed', activity_user=request.user)
-                    else:
-                        # If an approval record for this object exists, check if a message was 
-                        # sent. If so, update the approval record's edited field
-                        approval_obj = obj.approval.all().latest(field_name='message_date_time')
-                        if approval_obj.message_date_time:
-                            if obj.last_changed_date_time > approval_obj.message_date_time:
-                                approval_obj.edited = True
-                                approval_obj.save()
                 
             else:
                 raise PermissionDenied
@@ -3244,14 +3204,6 @@ class CellLinePage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, CustomGua
                 # If an approval record for this object does not exist, create one
                 if not obj.approval.all().exists():
                     obj.approval.create(activity_type='changed', activity_user=request.user)
-                else:
-                    # If an approval record for this object exists, check if a message was 
-                    # sent. If so, update the approval record's edited field
-                    approval_obj = obj.approval.all().latest(field_name='message_date_time')
-                    if approval_obj.message_date_time:
-                        if obj.last_changed_date_time > approval_obj.message_date_time:
-                            approval_obj.edited = True
-                            approval_obj.save()
     
     def get_readonly_fields(self, request, obj=None):
         '''Override default get_readonly_fields to define user-specific read-only fields
