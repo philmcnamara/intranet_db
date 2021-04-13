@@ -27,11 +27,6 @@ $('#id_part_description').autocomplete({
             $('#id_cas_number').val(null)
         };
         if (extra_data[6] != "") {
-            $('#id_ghs_pictogram').val(extra_data[6])
-        } else {
-            $('#id_ghs_pictogram').val(null)
-        };
-        if (extra_data[7] != "") {
             $('#id_hazard_level_pregnancy').val(extra_data[7])
         } else {
             $('#id_hazard_level_pregnancy').val(null)

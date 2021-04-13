@@ -309,7 +309,7 @@ class MyAdminSite(admin.AdminSite):
                                 .exclude(part_description__iexact="none") \
                                 .order_by('-id')[:50] \
                                 .values("supplier", "supplier_part_no", "part_description", "primary_location", "backup_location", 
-                                "msds_form", "price", "cas_number", "ghs_pictogram", "hazard_level_pregnancy")
+                                "msds_form", "price", "cas_number", "hazard_level_pregnancy")
 
         lstofprodname = []
         json_line = ""
@@ -335,8 +335,7 @@ class MyAdminSite(admin.AdminSite):
                         order["backup_location"],
                         order["msds_form"] if order["msds_form"] else 0,
                         order["price"],
-                        order["cas_number"], 
-                        order["ghs_pictogram"],
+                        order["cas_number"],
                         order["hazard_level_pregnancy"])
                     
                     lstofprodname.append(part_description_lower)
@@ -363,7 +362,6 @@ class MyAdminSite(admin.AdminSite):
                         order["msds_form"] if order["msds_form"] else 0,
                         order["price"],
                         order["cas_number"], 
-                        order["ghs_pictogram"],
                         order["hazard_level_pregnancy"])
                     
                     lstofprodname.append(part_description_lower)
