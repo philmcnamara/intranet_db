@@ -431,7 +431,7 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     integrated_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_integrated_plasmids', blank=True)
     cassette_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_cassette_plasmids', help_text='Tagging and knock out plasmids', blank=True)
     episomal_plasmids = models.ManyToManyField('Plasmid', related_name='pombe_episomal_plasmids', blank=True, through='ScPombeStrainEpisomalPlasmid')
-
+    isolates = models.CharField("Isolates", blank=True, help_text="Information on isolates A,B,C,D, etc.", max_length=255)
     created_date_time = models.DateTimeField("created", auto_now_add=True)
     created_approval_by_pi = models.BooleanField("record creation approval", default=False)
     last_changed_date_time = models.DateTimeField("last changed", auto_now=True)
