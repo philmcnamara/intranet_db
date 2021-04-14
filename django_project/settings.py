@@ -150,7 +150,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Europe/Berlin'
 USE_I18N = True
-USE_L10N = False
+USE_L10N = True
 USE_TZ = True
 
 
@@ -206,5 +206,3 @@ en_gb_formats.DATE_FORMAT = "j N Y"
 LOGIN_URL="/login/"
 
 IMPORT_EXPORT_USE_TRANSACTIONS=True
-
-DATE_INPUT_FORMATS=['%b %d %Y', '%b %d, %Y']
