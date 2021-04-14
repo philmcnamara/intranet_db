@@ -20,7 +20,7 @@ from djangoql.schema import IntField
 
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
-from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
+from django_project.private_settings import APPROVAL_EMAIL_ADDRESSES
 from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
 from django_project.private_settings import ALLOWED_HOSTS
 
@@ -725,7 +725,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                 send_mail('New order placed', 
                 message, 
                 SERVER_EMAIL_ADDRESS,
-                ORDER_APPROVAL_EMAIL_ADDRESSES,
+                APPROVAL_EMAIL_ADDRESSES,
                 fail_silently=False,)
                 messages.success(request, 'The order approval manager has been notified of your request')
                 obj.approval_email=True

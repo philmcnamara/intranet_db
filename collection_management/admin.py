@@ -83,7 +83,7 @@ import csv
 from record_approval.models import RecordToBeApproved
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
-from django_project.private_settings import ORDER_APPROVAL_EMAIL_ADDRESSES
+from django_project.private_settings import APPROVAL_EMAIL_ADDRESSES
 from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
 import inspect
 
@@ -2180,7 +2180,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
             send_mail('New Oligo Ordered', 
             message, 
             SERVER_EMAIL_ADDRESS,
-            ORDER_APPROVAL_EMAIL_ADDRESSES,
+            APPROVAL_EMAIL_ADDRESSES,
             fail_silently=True)
             obj.save()
         

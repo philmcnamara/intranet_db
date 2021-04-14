@@ -10,12 +10,13 @@ from django.urls import reverse
 from django.utils.text import capfirst
 
 from order_management.models import Order
+from collection_management.models import ScPombeStrain, Oligo
 from .models import RecordToBeApproved
 from django.contrib.contenttypes.models import ContentType
 
 from django_project.private_settings import SITE_TITLE
 from django_project.private_settings import SERVER_EMAIL_ADDRESS
-from django_project.private_settings import ORDER_MANAGER_EMAIL_ADDRESSES
+from django_project.private_settings import APPROVAL_EMAIL_ADDRESSES
 from django_project.private_settings import ALLOWED_HOSTS
 from admin_comments.admin import CommentInline
 
@@ -227,24 +228,30 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
 
 
     def save_model(self, request, obj, form, change):
+        if obj.content_type.model == "order":
+            name = Order.objects.get(id=obj.object_id).name
+            
+        elif obj.content_type.model == "oligo":
+            name = Oligo.objects.get(id=obj.object_id).name
 
-        order = Order.objects.get(id=obj.object_id)
+        elif obj.content_type.model == "scpombestrain":
+            name = ScPombeStrain.objects.get(id=obj.object_id).strain_name
 
-        message = """There is a new comment on the order for {} - ID {}. You can find all pending approval records here: https://{}/record_approval/recordtobeapproved/
-        """.format(order.part_name, order.id, ALLOWED_HOSTS[0])
+        if name is not None:
+            message = "There is a new comment on {}. You can find all pending approval records here: https://{}/record_approval/recordtobeapproved/".format(name, ALLOWED_HOSTS[0])
+            
+            message = inspect.cleandoc(message)
 
-        message = inspect.cleandoc(message)
+            # If the approval manager leaves the comment, notify the requester
+            if request.user.groups.filter(name="Approval manager").exists():
+                recipient = User.objects.get(username=obj.activity_user)
+                send_mail('New comment on {}'.format(name), message, SERVER_EMAIL_ADDRESS, [recipient.email] ,fail_silently=False,)
+                messages.success(request, '{} has been notified of your new comment'.format(recipient.username))
 
-        # If the approval manager leaves the comment, notify the requester
-        if request.user.groups.filter(name="Approval manager").exists():
-            recipient = User.objects.get(username=order.created_by)
-            send_mail('New comment on your pending order', message, SERVER_EMAIL_ADDRESS, [recipient.email] ,fail_silently=False,)
-            messages.success(request, '{} has been notified of your new comment'.format(recipient.username))
-
-        # otherwise, notify the approval manager
-        else:
-            send_mail('New comment on pending order', message, SERVER_EMAIL_ADDRESS, ORDER_MANAGER_EMAIL_ADDRESSES,fail_silently=False,)
-            messages.success(request, 'The approval manager been notified of your new comment')
+            # otherwise, notify the approval manager
+            else:
+                send_mail('New comment on {}'.format(name), message, SERVER_EMAIL_ADDRESS, APPROVAL_EMAIL_ADDRESSES,fail_silently=False,)
+                messages.success(request, 'The approval manager been notified of your new comment')
 
         obj.last_changed_date_time=datetime.datetime.now()
         obj.save()
