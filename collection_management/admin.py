@@ -2513,7 +2513,14 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         'created_date_time' and 'last_changed_date_time' fields must always be read-only
         because their set by Django itself'''
         
+        self.can_change = False
+
         if obj:
+            
+            self.can_change = request.user == obj.frozen_by or \
+                    request.user.groups.filter(name='Lab manager').exists() or \
+                    request.user.is_superuser or request.user.labuser.is_principal_investigator
+
             if self.can_change:
                 return ['created_date_time', 'created_approval_by_pi', 'last_changed_date_time', 'last_changed_approval_by_pi','created_by',]
             else:
@@ -2589,9 +2596,7 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
         
         self.can_change = False
 
-        extra_context = extra_context or {}
-        extra_context['show_disapprove'] = False
-        extra_context['show_formz'] = False
+        extra_context = extra_context = {}
 
         if object_id:
             
@@ -2599,35 +2604,11 @@ class ScPombeStrainPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admi
                     request.user.groups.filter(name='Lab manager').exists() or \
                     request.user.groups.filter(name='Regular Lab Member').exists() or \
                     request.user.is_superuser or request.user.labuser.is_principal_investigator
-            extra_context = extra_context or {}
-            extra_context['show_formz'] = True
+
             obj = ScPombeStrain.objects.get(pk=object_id)
             
             if obj.history_all_plasmids_in_stocked_strain:
                 extra_context['plasmid_id_list'] = obj.history_all_plasmids_in_stocked_strain
-            
-            if request.user == obj.created_by or request.user.groups.filter(name='Lab manager').exists() or \
-                request.user.is_superuser or request.user.labuser.is_principal_investigator:
-
-                extra_context.update({'show_close': True,
-                                'show_save_and_add_another': True,
-                                'show_save_and_continue': True,
-                                'show_save_as_new': True,
-                                'show_save': True,
-                                'show_obj_permission': True
-                                })
-
-            else:
-
-                 extra_context.update({'show_close': True,
-                                 'show_save_and_add_another': False,
-                                 'show_save_and_continue': False,
-                                 'show_save_as_new': False,
-                                 'show_save': False,
-                                 'show_obj_permission': False})
-            
-            #extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
-            extra_context['show_formz'] = True
 
         if '_saveasnew' in request.POST:
             self.fieldsets = (
