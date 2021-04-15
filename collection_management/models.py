@@ -421,10 +421,10 @@ class ScPombeStrain (models.Model, SaveWithoutHistoricalRecord):
     genotype = models.TextField("genotype", blank=True)
     phenotype = models.CharField("phenotype", max_length=255, blank=True)
     received_from = models.CharField("received from", max_length=255, blank=True)
-    comment = models.CharField("comments", max_length=1000, blank=True)
+    comment = models.TextField("comments", help_text="Any deviation from wild-type (alleles/markers) should be listed in genotype, not comments", blank=True)
     frozen_on = models.DateField("frozen on", default=None, blank=True, null=True)
     frozen_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="frozen_by", null=True, blank=True)
-    made_by = models.TextField("made by", blank=True, default="")
+    made_by = models.CharField("made by", blank=True, max_length=255)
     ploidy = models.CharField("ploidy", max_length=20, choices=(("haploid", "haploid"), ("diploid", "diploid"),
                                                                  ("triploid", "triploid"), ("tetraploid", "tetraploid")),
                                                                  blank = True)
