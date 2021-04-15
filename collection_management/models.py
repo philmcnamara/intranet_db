@@ -360,11 +360,21 @@ OLIGO_STATUS_CHOICES = (
 ('delivered', 'delivered'),
 ('cancelled', 'cancelled'))
 
+OLIGO_SCALE_CHOICES = (
+    ('25 nmole', '25 nmole'),
+    ('100 nmole', '100 nmole'),
+    ('250 nmole', '250 nmole'),
+    ('1 mmole', '1 mmole'),
+    ('2 mmole', '2 mmole'),
+    ('5 mmole', '5 mmole')
+)
+
 class Oligo (models.Model, SaveWithoutHistoricalRecord):
     
     name = models.CharField("name", max_length=255, unique=False, blank=False)
     sequence = models.CharField("sequence", max_length=255, blank=False)
     scale = models.SmallIntegerField("scale (nanomolar)", blank=True, null=True)
+    scale_choices = models.CharField("scale (mole)", choices=OLIGO_SCALE_CHOICES, max_length=255, blank=True, null=True)
     purification = models.CharField("purification", max_length=20, choices=(("Desalting", "Desalting"), ("HPLC", "HPLC"),
                                                                              ("PAGE", "PAGE"), ("RNase", "RNase")), blank = True)
     us_e = models.CharField("use", max_length=255, blank=True, null=True)
