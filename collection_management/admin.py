@@ -1942,7 +1942,7 @@ class OligoQLSchema(DjangoQLSchema):
         '''Define fields that can be searched'''
         
         if model == Oligo:
-            return ['name','sequence', 'scale', 'purification', FieldUse(), 
+            return ['name','sequence', 'scale_choices', 'purification', FieldUse(), 
             'gene', 'description', 'delivery_notification', 'synonym', 
             'location', 'order_conf_num', 'location', 'created_by',]
         elif model == User:
@@ -1954,7 +1954,7 @@ class OligoExportResource(resources.ModelResource):
     
     class Meta:
         model = Oligo
-        fields = ('id', 'name','sequence', 'scale', 'purification', 'us_e', 
+        fields = ('id', 'name','sequence', 'scale_choices', 'purification', 'us_e', 
         'gene', 'description', 'delivery_notification', 'synonym', 'location', 'created_by__username',)
 
 def export_oligo(modeladmin, request, queryset):
@@ -2179,7 +2179,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
         because their set by Django itself'''
         
         always_readonly_fields = ['created_date_time', 'last_changed_date_time', 'created_by']
-        other_fields = ['name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
+        other_fields = ['name','sequence', 'scale_choices', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
                         'synonym', 'order_conf_num', 'location']
 
         if obj:
@@ -2201,7 +2201,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
     def add_view(self,request,extra_context=None):
         '''Override default add_view to show only desired fields'''
         
-        self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
+        self.fields = ('name','sequence', 'scale_choices', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
                        'order_conf_num', 'synonym', 'location')
         return super(OligoPage,self).add_view(request)
 
@@ -2241,7 +2241,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
             # extra_context['show_disapprove'] = True if request.user.groups.filter(name='Approval manager').exists() else False
 
         if '_saveasnew' in request.POST:
-            self.fields = ('name','sequence', 'scale', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
+            self.fields = ('name','sequence', 'scale_choices', 'purification', 'us_e', 'gene', 'description', 'delivery_notification',
                  'order_conf_num', 'synonym','location')
             extra_context.update({'show_save_and_continue': False,
                         'show_save': False,
@@ -2251,7 +2251,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
                         'show_obj_permission': False
                         })
         else:
-            self.fields = ('name','sequence', 'scale', 'purification',
+            self.fields = ('name','sequence', 'scale_choices', 'purification',
                            'us_e', 'gene', 'description', 'delivery_notification', 'synonym',
                            'order_conf_num', 'location', 'last_changed_date_time', 
                            'created_by',)
