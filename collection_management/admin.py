@@ -2151,7 +2151,7 @@ class OligoPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, Approval, ad
             else:
                 raise PermissionDenied
         
-        if obj.approval_email == False:
+        if obj.status == "submitted" and obj.approval_email == False:
             obj.approval_email = True
             message = """Dear Order Appproval Manager,
 

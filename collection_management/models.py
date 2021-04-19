@@ -364,9 +364,9 @@ OLIGO_SCALE_CHOICES = (
     ('25 nmole', '25 nmole'),
     ('100 nmole', '100 nmole'),
     ('250 nmole', '250 nmole'),
-    ('1 mmole', '1 mmole'),
-    ('2 mmole', '2 mmole'),
-    ('5 mmole', '5 mmole')
+    ('1 µmole', '1 µmole'),
+    ('2 µmole', '2 µmole'),
+    ('5 µmole', '5 µmole')
 )
 
 class Oligo (models.Model, SaveWithoutHistoricalRecord):
