@@ -229,7 +229,7 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if obj.content_type.model == "order":
-            name = Order.objects.get(id=obj.object_id).name
+            name = Order.objects.get(id=obj.object_id).part_name
             
         elif obj.content_type.model == "oligo":
             name = Oligo.objects.get(id=obj.object_id).name
