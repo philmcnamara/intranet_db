@@ -157,7 +157,7 @@ class ContentTypeFilter(admin.SimpleListFilter):
 
 class RecordToBeApprovedPage(admin.ModelAdmin):
     
-    list_display = ('id', 'titled_content_type', 'record_link', 'coloured_activity_type', 'activity_user', 'last_changed_date_time', 'history_link' )
+    list_display = ('id', 'comment_link', 'titled_content_type', 'record_link', 'coloured_activity_type', 'activity_user', 'last_changed_date_time', 'history_link' )
     list_display_links = ('id', )
     list_per_page = 50
     ordering = ['-object_id']
@@ -206,6 +206,14 @@ class RecordToBeApprovedPage(admin.ModelAdmin):
 
         return mark_safe('<a href="{}" target="_blank">{}</a>'.format(url, 'History',))
     history_link.short_description = 'History'
+
+    def comment_link(self, instance):
+        '''Custom link to a record for clarity'''
+
+        url = reverse("admin:{}_{}_change".format("record_approval", "recordtobeapproved"), args=(instance.id,))
+
+        return mark_safe('<a href="{}" target="_blank">{}</a>'.format(url, 'View Comments',))
+    comment_link.short_description = 'Comments'
 
     def titled_content_type(self, instance):
         '''Custom link to a record's history field for changelist_view'''
