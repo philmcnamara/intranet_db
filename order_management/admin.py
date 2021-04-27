@@ -405,6 +405,16 @@ def change_order_status_to_cancelled(modeladmin, request, queryset):
     else:
         for order in queryset:
             order.status = 'cancelled'
+            # Alert the user that their order has been cancelled
+            recipient = User.objects.get(username=order.created_by)
+            message = """Dear {},
+
+            Your order for {} has been cancelled by the approval manager.""".format(recipient.first_name, order.part_name)
+            
+            message = inspect.cleandoc(message)
+            send_mail('Order Request Cancelled', message, SERVER_EMAIL_ADDRESS, [recipient.email] ,fail_silently=False,)
+            record = RecordToBeApproved.objects.all().get(object_id=order.id)
+            record.delete()
             order.save()
 change_order_status_to_cancelled.short_description = "Change STATUS of selected to CANCELLED"
 change_order_status_to_cancelled.acts_on_all = True
