@@ -777,6 +777,7 @@ class OrderPage(DjangoQLSearchMixin, SimpleHistoryWithSummaryAdmin, admin.ModelA
                     all_fields = always_readonly_fields + cloned_readonly_fields + never_readonly_fields
                     all_fields.remove("primary_location")
                     all_fields.remove("backup_location")
+                    all_fields.remove("comment")
                     return all_fields
 
                 # new order being created
