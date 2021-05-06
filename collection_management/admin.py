@@ -2065,16 +2065,20 @@ change_oligo_status_to_cancelled.acts_on_all = True
 import copy
 
 def copy_oligo(modeladmin, request, queryset):
-    for oligo in queryset:
-        clone = copy.copy(oligo)
-        clone.id = None
-        clone.created_by = request.user
-        clone.status = "unsubmitted"
-        clone.approval_email = False
-        clone.delivery_email = False
-        clone.delivery_notification = True
-        clone.order_conf_num = None
-        clone.save()
+    if request.user.groups.filter(name='Guest'):
+        messages.error(request, 'Sorry, your account does not have that permission.')
+        return
+    else:
+        for oligo in queryset:
+            clone = copy.copy(oligo)
+            clone.id = None
+            clone.created_by = request.user
+            clone.status = "unsubmitted"
+            clone.approval_email = False
+            clone.delivery_email = False
+            clone.delivery_notification = True
+            clone.order_conf_num = None
+            clone.save()
     copy_oligo.short_description = "Copy selected oligos"
 
 
